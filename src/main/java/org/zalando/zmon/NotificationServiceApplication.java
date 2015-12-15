@@ -25,28 +25,30 @@ public class NotificationServiceApplication {
         return new JedisPool(poolConfig, new URI(config.getRedisUri()));
     }
 
-    public static class SubscriptionRequestBody {
+    public static class DeviceRequestBody{
         public String registration_token;
+    }
+
+    public static class SubscriptionRequestBody {
         public int alert_id;
     }
 
     public static class PublishRequestBody {
+        public int alert_id;
         public JsonNode data;
         public JsonNode notification;
-        public int alert_id;
     }
 
     @Autowired
     JedisPool pool;
 
-    @RequestMapping(value="/api/v1/subscription", method = RequestMethod.POST)
-    public void registerDeviceToken(@RequestBody SubscriptionRequestBody body) {
 
+    @RequestMapping(value="/api/v1/device", method = RequestMethod.POST)
+    public void registerDevice(@RequestBody DeviceRequestBody body) {
     }
 
-
-    @RequestMapping(value="/api/v1/subscription", method = RequestMethod.DELETE)
-    public void unregisterDeviceToken(@RequestBody SubscriptionRequestBody body) {
+    @RequestMapping(value="/api/v1/subscription", method = RequestMethod.POST)
+    public void registerSubscription(@RequestBody SubscriptionRequestBody body) {
 
     }
 
