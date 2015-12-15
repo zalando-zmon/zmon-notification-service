@@ -9,13 +9,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @RestController
 @SpringBootApplication
@@ -96,7 +96,18 @@ public class NotificationServiceApplication {
 
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
     public void publishNotification(@RequestBody PublishRequestBody body) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String notificationKey = String.format(NOTIFICATION_ALERTS, body.alert_id);
 
+            HashSet<String> devices = new HashSet<>();
+            for (String uid : jedis.smembers(notificationKey)) {
+                String deviceKey = String.format(NOTIFICATION_DEVICES, uid);
+                devices.addAll(jedis.smembers(deviceKey));
+            }
+
+            // push to all devices
+            // TODO
+        }
     }
 
 
