@@ -1,3 +1,17 @@
+endpoints:
+  enabled: false
+  health:
+    enabled: true
+    sensitive: true
+  metrics:
+    enabled: true
+
+sever:
+  port: 8080
+
+manangement:
+  port: 7979
+
 notifications:
   redis_uri: redis://localhost:6379/0
 
