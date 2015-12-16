@@ -31,12 +31,12 @@ public class TokenInfoService {
         this.executor = Executor.newInstance();
     }
 
-    public Optional<String> lookupUid(String header) {
-        if (Strings.isNullOrEmpty(header)) {
+    public Optional<String> lookupUid(String authorizationHeaderValue) {
+        if (Strings.isNullOrEmpty(authorizationHeaderValue)) {
             return Optional.empty();
         }
 
-        return queryCacheOrServer(header.replace("Bearer ", ""));
+        return queryCacheOrServer(authorizationHeaderValue.replace("Bearer ", ""));
     }
 
     private Optional<String> queryCacheOrServer(String oauthToken) {

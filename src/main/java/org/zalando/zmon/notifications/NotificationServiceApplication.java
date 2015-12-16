@@ -9,7 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import redis.clients.jedis.*;
+import org.zalando.zmon.notifications.push.GooglePushNotificationService;
+import org.zalando.zmon.notifications.push.PushNotificationService;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,8 +24,11 @@ import java.util.Optional;
 @SpringBootApplication
 public class NotificationServiceApplication {
 
-    @Value("${oauth.tokeninfo.url:}")
-    String tokenInfoUrl;
+    @Value("${oauthTokenInfoService.url:}")
+    String tokenInfoServiceUrl;
+
+    @Value("${pushNotificationService.url:}")
+    String pushNotificationServiceUrl;
 
     @Bean
     JedisPool getRedisPool(NotificationServiceConfig config) throws URISyntaxException {
@@ -31,7 +38,12 @@ public class NotificationServiceApplication {
 
     @Bean
     TokenInfoService getTokenInfoService() {
-        return new TokenInfoService(tokenInfoUrl);
+        return new TokenInfoService(tokenInfoServiceUrl);
+    }
+
+    @Bean
+    PushNotificationService getPushNotificationService() {
+        return new GooglePushNotificationService(pushNotificationServiceUrl);
     }
 
     // request payloads
@@ -55,6 +67,9 @@ public class NotificationServiceApplication {
 
     @Autowired
     TokenInfoService tokenInfoService;
+
+    @Autowired
+    PushNotificationService pushNotificationService;
 
     // build redis key for sets containing all devices for a given uid
     private String devicesForUidKey(String uid) {
@@ -104,13 +119,13 @@ public class NotificationServiceApplication {
         try (Jedis jedis = jedisPool.getResource()) {
             String notificationKey = notificationsForAlertKey(body.alert_id);
 
-            HashSet<String> devices = new HashSet<>();
+            HashSet<String> devicesTokens = new HashSet<>();
             for (String uid : jedis.smembers(notificationKey)) {
-                String deviceKey = devicesForUidKey(uid);
-                devices.addAll(jedis.smembers(deviceKey));
+                devicesTokens.addAll(jedis.smembers(devicesForUidKey(uid)));
             }
 
             // push to all devices
+
             // TODO
         }
     }
