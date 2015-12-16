@@ -21,13 +21,17 @@ public class PreSharedKeyStore {
         }
 
         for(Map.Entry<String, Long> entry: keys.entrySet()) {
-            LOG.info("Adding preshared key=...{}", entry.getKey().substring(0,4));
+            LOG.info("Adding preshared key={}...", entry.getKey().substring(0,4));
         }
 
         this.keys = keys;
     }
 
     public boolean isKeyValid(String key) {
+        if(keys.containsKey(key)) {
+            LOG.info("Validity: {} vs {}", System.currentTimeMillis(), keys.get(key));
+        }
+
         return keys.containsKey(key)
                 && ( System.currentTimeMillis() < keys.get(key));
     }
