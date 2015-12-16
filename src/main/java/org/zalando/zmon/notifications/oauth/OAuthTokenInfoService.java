@@ -60,7 +60,7 @@ public class OAuthTokenInfoService implements TokenInfoService {
         if (result.has("uid") && result.get("expires_in").asInt() > 0) {
             return result.get("uid").asText();
         }
-        return null;
+        throw new Exception("Token verification failed!");
     }
 
     @Override
