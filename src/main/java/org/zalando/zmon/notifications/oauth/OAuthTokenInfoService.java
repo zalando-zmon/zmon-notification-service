@@ -53,6 +53,9 @@ public class OAuthTokenInfoService implements TokenInfoService {
         }
     }
 
+
+    //curl --insecure -H 'Authorization: Bearer de871723-b003-485d-9339-320bb0d3a99d' https://zmon-notification-service-3.stups.zalan.do/api/v1/mobile/alerts
+
     private String queryOAuthServer(String token) throws Exception {
         // throws exception in != 200 status code
         String body = executor.execute(Request.Get(serviceUrl + token)).returnContent().asString();

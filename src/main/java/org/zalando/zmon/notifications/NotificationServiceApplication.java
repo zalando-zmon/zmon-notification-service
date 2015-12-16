@@ -17,7 +17,6 @@ import org.zalando.zmon.notifications.push.GooglePushNotificationService;
 import org.zalando.zmon.notifications.push.PushNotificationService;
 import org.zalando.zmon.notifications.store.NotificationStore;
 import org.zalando.zmon.notifications.store.RedisNotificationStore;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -38,12 +37,6 @@ public class NotificationServiceApplication {
     NotificationServiceConfig config;
 
     @Bean
-    JedisPool getRedisPool(NotificationServiceConfig config) throws URISyntaxException {
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        return new JedisPool(poolConfig, new URI(config.getRedisUri()));
-    }
-
-    @Bean
     TokenInfoService getTokenInfoService() {
         return new OAuthTokenInfoService(config.getOauthInfoServiceUrl());
     }
@@ -54,7 +47,9 @@ public class NotificationServiceApplication {
     }
 
     @Bean
-    NotificationStore getNotificationStore() {
+    NotificationStore getNotificationStore() throws URISyntaxException {
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
         return new RedisNotificationStore(jedisPool);
     }
 
@@ -75,9 +70,6 @@ public class NotificationServiceApplication {
     }
 
     @Autowired
-    JedisPool jedisPool;
-
-    @Autowired
     TokenInfoService tokenInfoService;
 
     @Autowired
@@ -92,7 +84,7 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> registerDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            getNotificationStore().addDeviceForUid(body.registration_token, uid.get());
+            notificationStore.addDeviceForUid(body.registration_token, uid.get());
             LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
@@ -117,14 +109,12 @@ public class NotificationServiceApplication {
 
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
     public void publishNotification(@RequestBody PublishRequestBody body) throws IOException {
-        try (Jedis jedis = jedisPool.getResource()) {
-            Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alert_id);
-            for (String deviceId : deviceIds) {
-                pushNotificationService.push(body, deviceId);
-            }
-
-            LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
+        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alert_id);
+        for (String deviceId : deviceIds) {
+            pushNotificationService.push(body, deviceId);
         }
+
+        LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
     }
 
     // Unregistering
