@@ -17,6 +17,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -117,18 +118,19 @@ public class NotificationServiceApplication {
     // publishing new alerts
 
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
-    public void publishNotification(@RequestBody PublishRequestBody body) {
+    public void publishNotification(@RequestBody PublishRequestBody body) throws IOException {
         try (Jedis jedis = jedisPool.getResource()) {
             String notificationKey = notificationsForAlertKey(body.alert_id);
 
-            HashSet<String> devicesTokens = new HashSet<>();
+            HashSet<String> deviceIds = new HashSet<>();
             for (String uid : jedis.smembers(notificationKey)) {
-                devicesTokens.addAll(jedis.smembers(devicesForUidKey(uid)));
+                deviceIds.addAll(jedis.smembers(devicesForUidKey(uid)));
             }
 
-            // push to all devices
-
-            // TODO
+            // push notification to all devices
+            for (String deviceId : deviceIds) {
+                pushNotificationService.push(body, deviceId);
+            }
         }
     }
 
