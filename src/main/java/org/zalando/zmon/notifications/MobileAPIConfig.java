@@ -9,14 +9,14 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "mobile")
 public class MobileAPIConfig {
-    public String dataServiceURL;
+    public String dataServiceUrl;
     public String readScope;
 
-    public String getDataServiceURL() {
-        return dataServiceURL;
+    public String getDataServiceUrl() {
+        return dataServiceUrl;
     }
 
-    public void setDataServiceURL(String dataServiceURL) {
-        this.dataServiceURL = dataServiceURL;
+    public void setDataServiceUrl(String dataServiceUrl) {
+        this.dataServiceUrl = dataServiceUrl;
     }
 }

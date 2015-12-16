@@ -38,7 +38,7 @@ public class MobileController {
             return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceURL + "/api/v1/mobile/alert").build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert").build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
@@ -52,7 +52,7 @@ public class MobileController {
             return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceURL + "/api/v1/mobile/alert").addParameter("alert_id", ""+alertId).build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert").addParameter("alert_id", ""+alertId).build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
@@ -67,7 +67,7 @@ public class MobileController {
             return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceURL + "/api/v1/mobile/all-teams").build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/all-teams").build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
@@ -82,7 +82,7 @@ public class MobileController {
             return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceURL + "/api/v1/mobile/status").build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/status").build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
