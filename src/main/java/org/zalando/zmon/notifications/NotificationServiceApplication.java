@@ -1,6 +1,7 @@
 package org.zalando.zmon.notifications;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,14 @@ public class NotificationServiceApplication {
         public int alert_id;
         public JsonNode data;
         public JsonNode notification;
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("alert_id", alert_id)
+                    .add("notification", notification.get("title"))
+                    .toString();
+        }
     }
 
     @Autowired

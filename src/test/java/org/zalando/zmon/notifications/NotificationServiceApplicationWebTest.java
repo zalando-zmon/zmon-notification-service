@@ -1,19 +1,15 @@
 package org.zalando.zmon.notifications;
 
-import org.apache.http.HttpStatus;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
-import org.springframework.boot.test.TestRestTemplate;
 import org.springframework.boot.test.WebIntegrationTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 import org.zalando.zmon.notifications.oauth.DummyTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
@@ -25,6 +21,7 @@ import org.zalando.zmon.notifications.store.NotificationStore;
 import java.net.URISyntaxException;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +39,11 @@ public class NotificationServiceApplicationWebTest {
     @Autowired
     private WebApplicationContext wac;
 
+
+    private final String DEVICE = UUID.fromString("6f18fb92-dbe3-41ac-ab8e-82be7f30e246").toString();
+    private final int ALERT = 142;
+
+
     @Bean
     TokenInfoService getTokenInfoService() {
         return new DummyTokenInfoService();
@@ -57,31 +59,71 @@ public class NotificationServiceApplicationWebTest {
         return new InMemoryNotificationStore();
     }
 
-
     @Test
-    public void add() throws Exception {
+    public void unauthorized() throws Exception {
         MockMvc mvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
-
-        String deviceId = UUID.randomUUID().toString();
 
         mvc.perform(
                 post("/api/v1/device").
-                        content("{\"registration_token\" : \""+deviceId+"\" }")
-//                        accept("application/json")
-        ).
-                andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+                        contentType(MediaType.APPLICATION_JSON_UTF8).
+                        content("{\"registration_token\" : \"" + DEVICE + "\" }").
+                        header("Authorization", "Bearer 1334ff68-ba2e-4b07-8e67-9304c55f8308")  // wrong token; see: DummyTokenInfoService
+        ).andExpect(
+                status().isUnauthorized()
+        );
+    }
 
+    @Test
+    public void happyPath() throws Exception {
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
 
-        assertNotNull(wac);
-//        RestTemplate template = new TestRestTemplate();
-//
-//        template.postForEntity("")
-//        when().
-//                post("/api/v1/device", "").
-//                then().
-//                statusCode(HttpStatus.SC_OK).
-//                body("name", Matchers.is("Mickey Mouse")).
-//                body("id", Matchers.is(mickeyId));
+        // insert device
+        mvc.perform(
+                post("/api/v1/device").
+                        contentType(MediaType.APPLICATION_JSON_UTF8).
+                        content("{\"registration_token\" : \""+ DEVICE +"\" }").
+                        header("Authorization", "Bearer 6334ff68-ba2e-4b07-8e67-9304c55f8308")
+        ).andExpect(
+                status().isOk()
+        );
+
+        assertEquals(
+                "in-mem-store: devices={a-uid=[6f18fb92-dbe3-41ac-ab8e-82be7f30e246]} alerts={}",
+                application.notificationStore.toString()
+        );
+
+        // insert alert
+        mvc.perform(
+                post("/api/v1/subscription").
+                        contentType(MediaType.APPLICATION_JSON_UTF8).
+                        content("{\"alert_id\" : "+ ALERT +" }").
+                        header("Authorization", "Bearer 6334ff68-ba2e-4b07-8e67-9304c55f8308")
+        ).andExpect(
+                status().isOk()
+        );
+
+        assertEquals(
+                "in-mem-store: devices={a-uid=[6f18fb92-dbe3-41ac-ab8e-82be7f30e246]} alerts={142=[a-uid]}",
+                application.notificationStore.toString()
+        );
+
+        // publish
+        mvc.perform(
+                post("/api/v1/publish").
+                        contentType(MediaType.APPLICATION_JSON_UTF8).
+                        content("{" +
+                                    "\"alert_id\" : "+ ALERT + "," +
+                                    "\"data\": {\"entity\":\"customer4.db.zalando\"}," +
+                                    "\"notification\": {\"title\":\"No database connection to master\"}" +
+                                "}"
+                        )
+        ).andExpect(
+                status().isOk()
+        );
+
+        assertEquals(
+                "stub-pushed-notifications: {"+DEVICE+"=[PublishRequestBody{alert_id="+ALERT+", notification=\"No database connection to master\"}]}",
+                application.pushNotificationService.toString()
+        );
     }
 }
