@@ -16,7 +16,7 @@ import java.util.Optional;
  * Created by jmussler on 12/16/15.
  */
 @RestController
-@RequestMapping(path="api/v1/mobile/")
+@RequestMapping(path="/api/v1/mobile/")
 public class MobileController {
 
     @Autowired
@@ -56,6 +56,5 @@ public class MobileController {
         JsonNode node = mapper.createObjectNode();
         return new ResponseEntity<>( node, HttpStatus.OK);
     }
-
 
 }
