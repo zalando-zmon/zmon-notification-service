@@ -1,4 +1,4 @@
-package org.zalando.zmon;
+package org.zalando.zmon.notifications;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

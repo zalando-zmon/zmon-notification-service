@@ -1,4 +1,4 @@
-package org.zalando.zmon;
+package org.zalando.zmon.notifications;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -141,7 +141,7 @@ public class NotificationServiceApplication {
         }
         return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
-    
+
     public static void main(String[] args) {
         SpringApplication.run(NotificationServiceApplication.class, args);
     }

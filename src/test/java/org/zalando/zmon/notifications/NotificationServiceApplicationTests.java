@@ -1,9 +1,10 @@
-package org.zalando.zmon;
+package org.zalando.zmon.notifications;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.zalando.zmon.notifications.NotificationServiceApplication;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = NotificationServiceApplication.class)
