@@ -37,6 +37,9 @@ public class NotificationServiceApplication {
     @Value("${pushNotificationService.url:}")
     String pushNotificationServiceUrl;
 
+    @Value("${googleApiKey:}")
+    String googleApiKey;
+
     @Bean
     JedisPool getRedisPool(NotificationServiceConfig config) throws URISyntaxException {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -50,7 +53,7 @@ public class NotificationServiceApplication {
 
     @Bean
     PushNotificationService getPushNotificationService() {
-        return new GooglePushNotificationService(pushNotificationServiceUrl);
+        return new GooglePushNotificationService(pushNotificationServiceUrl, googleApiKey);
     }
 
     // request payloads

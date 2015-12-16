@@ -5,7 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 import org.zalando.zmon.notifications.NotificationServiceApplication;
+
+import static com.google.common.base.Charsets.UTF_8;
 
 public class JsonHelper {
 
@@ -17,6 +21,8 @@ public class JsonHelper {
         objectNode.set("data", notification.data);
         objectNode.set("notification", notification.notification);
         String json = mapper.writeValueAsString(objectNode);
-        return new StringEntity(json, Charsets.UTF_8);
+        StringEntity result = new StringEntity(json, UTF_8);
+        result.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+        return result;
     }
 }

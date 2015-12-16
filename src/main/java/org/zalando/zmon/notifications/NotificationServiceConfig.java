@@ -9,25 +9,39 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "notifications")
 public class NotificationServiceConfig {
-    private String redisUri;
+    private String oauthInfoServiceUrl;
+
+    private String googleUrl;
     private String googleApiKey;
-    private String teamServiceUrl;
 
-    public String getTeamServiceUrl() {
-        return teamServiceUrl;
+    private String redisUri;
+
+    public String getOauthInfoServiceUrl() {
+        return oauthInfoServiceUrl;
     }
 
-    public void setTeamServiceUrl(String teamServiceUrl) {
-        this.teamServiceUrl = teamServiceUrl;
+    public void setOauthInfoServiceUrl(String teamServiceUrl) {
+        this.oauthInfoServiceUrl = teamServiceUrl;
     }
 
-    public String getGoogleApiKey() {
+
+    public String getGooglePushServiceUrl() {
+        return googleUrl;
+    }
+
+    public void setGooglePushServiceUrl(String googleUrl) {
+        this.googleUrl = googleUrl;
+    }
+
+
+    public String getGooglePushServiceApiKey() {
         return googleApiKey;
     }
 
-    public void setGoogleApiKey(String googleApiKey) {
+    public void setGooglePushServiceApiKey(String googleApiKey) {
         this.googleApiKey = googleApiKey;
     }
+
 
     public String getRedisUri() {
         return redisUri;

@@ -30,6 +30,9 @@ public class JsonHelperTest {
                 "{\"alert_id\":42,\"data\":{\"entity\":\"customer4.db.zalando\"},\"notification\":{\"title\":\"No database connection to master\"}}",
                 stringEntityContent(stringEntity)
         );
+
+        assertEquals("application/json", stringEntity.getContentType().getValue());
+
     }
 
     private String stringEntityContent(StringEntity stringEntity) throws IOException {
