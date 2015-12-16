@@ -1,6 +1,8 @@
 package org.zalando.zmon.notifications;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -26,6 +28,8 @@ import java.util.Optional;
 @RestController
 @SpringBootApplication
 public class NotificationServiceApplication {
+
+    private static final Logger LOG = LoggerFactory.getLogger(NotificationServiceApplication.class);
 
     @Value("${oauthTokenInfoService.url:}")
     String oauthTokenInfoServiceUrl;
@@ -92,9 +96,9 @@ public class NotificationServiceApplication {
         if (uid.isPresent()) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.sadd(devicesForUidKey(uid.get()), body.registration_token);     // this redis set contains all the devices registered for a specific oauth uid
+                LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
                 return new ResponseEntity<>("", HttpStatus.OK);
             }
-
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
@@ -106,6 +110,7 @@ public class NotificationServiceApplication {
         if (uid.isPresent()) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.sadd(notificationsForAlertKey(body.alert_id), uid.get());     // this redis set contains all the users registered for a specific alert id
+                LOG.info("Registered alert {} for uid {}.", body.alert_id, uid.get());
                 return new ResponseEntity<>("", HttpStatus.OK);
             }
         } else {
@@ -131,6 +136,8 @@ public class NotificationServiceApplication {
             for (String deviceId : deviceIds) {
                 pushNotificationService.push(body, deviceId);
             }
+
+            LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
         }
     }
 
@@ -142,6 +149,7 @@ public class NotificationServiceApplication {
         if (uid.isPresent()) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.srem(devicesForUidKey(uid.get()), body.registration_token); // remove device from user
+                LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
                 return new ResponseEntity<>("", HttpStatus.OK);
             }
         } else {
@@ -155,6 +163,7 @@ public class NotificationServiceApplication {
         if (uid.isPresent()) {
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.srem(notificationsForAlertKey(body.alert_id), uid.get());
+                LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
                 return new ResponseEntity<>("", HttpStatus.OK);
             }
         }
