@@ -31,14 +31,8 @@ public class NotificationServiceApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(NotificationServiceApplication.class);
 
-    @Value("${oauthTokenInfoService.url:}")
-    String oauthTokenInfoServiceUrl;
-
-    @Value("${pushNotificationService.url:}")
-    String pushNotificationServiceUrl;
-
-    @Value("${googleApiKey:}")
-    String googleApiKey;
+    @Autowired
+    NotificationServiceConfig config;
 
     @Bean
     JedisPool getRedisPool(NotificationServiceConfig config) throws URISyntaxException {
@@ -48,12 +42,12 @@ public class NotificationServiceApplication {
 
     @Bean
     TokenInfoService getTokenInfoService() {
-        return new OAuthTokenInfoService(oauthTokenInfoServiceUrl);
+        return new OAuthTokenInfoService(config.getOauthInfoServiceUrl());
     }
 
     @Bean
     PushNotificationService getPushNotificationService() {
-        return new GooglePushNotificationService(pushNotificationServiceUrl, googleApiKey);
+        return new GooglePushNotificationService(config.getGooglePushServiceUrl(), config.getGooglePushServiceApiKey());
     }
 
     // request payloads

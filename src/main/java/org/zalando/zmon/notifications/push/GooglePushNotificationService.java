@@ -1,5 +1,6 @@
 package org.zalando.zmon.notifications.push;
 
+import com.google.common.base.MoreObjects;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
@@ -26,6 +27,13 @@ public class GooglePushNotificationService implements PushNotificationService {
                         body(jsonEntityFor(notification)).
                         addHeader("Authorization", "Key=" + googleApiKey)
         );
+    }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("serviceUrl", serviceUrl)
+                .add("googleApiKey", googleApiKey)
+                .toString();
     }
 }

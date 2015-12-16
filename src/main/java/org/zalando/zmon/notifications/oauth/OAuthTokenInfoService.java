@@ -2,6 +2,7 @@ package org.zalando.zmon.notifications.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -59,5 +60,12 @@ public class OAuthTokenInfoService implements TokenInfoService {
             return result.get("uid").asText();
         }
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("serviceUrl", serviceUrl)
+                .toString();
     }
 }
