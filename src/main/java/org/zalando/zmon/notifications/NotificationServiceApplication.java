@@ -15,6 +15,8 @@ import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.push.GooglePushNotificationService;
 import org.zalando.zmon.notifications.push.PushNotificationService;
+import org.zalando.zmon.notifications.store.NotificationStore;
+import org.zalando.zmon.notifications.store.RedisNotificationStore;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -22,7 +24,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Optional;
 
 @RestController
@@ -51,6 +53,11 @@ public class NotificationServiceApplication {
         return new GooglePushNotificationService(config.getGooglePushServiceUrl(), config.getGooglePushServiceApiKey());
     }
 
+    @Bean
+    NotificationStore getNotificationStore() {
+        return new RedisNotificationStore(jedisPool);
+    }
+
     // request payloads
 
     public static class DeviceRequestBody {
@@ -76,15 +83,8 @@ public class NotificationServiceApplication {
     @Autowired
     PushNotificationService pushNotificationService;
 
-    // build redis key for sets containing all devices for a given uid
-    private String devicesForUidKey(String uid) {
-        return String.format("zmon:push:%s", uid);
-    }
-
-    // build redis key for sets containing all devices subscribed to given alertId
-    private String notificationsForAlertKey(int alertId) {
-        return String.format("zmon:alert:%d", alertId);
-    }
+    @Autowired
+    NotificationStore notificationStore;
 
     // registering
 
@@ -92,11 +92,9 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> registerDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.sadd(devicesForUidKey(uid.get()), body.registration_token);     // this redis set contains all the devices registered for a specific oauth uid
-                LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
-                return new ResponseEntity<>("", HttpStatus.OK);
-            }
+            getNotificationStore().addDeviceForUid(body.registration_token, uid.get());
+            LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
+            return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
@@ -106,16 +104,13 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> registerSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.sadd(notificationsForAlertKey(body.alert_id), uid.get());     // this redis set contains all the users registered for a specific alert id
-                LOG.info("Registered alert {} for uid {}.", body.alert_id, uid.get());
-                return new ResponseEntity<>("", HttpStatus.OK);
-            }
+            notificationStore.addAlertForUid(body.alert_id, uid.get());
+            LOG.info("Registered alert {} for uid {}.", body.alert_id, uid.get());
+            return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
     }
-
 
 
     // publishing new alerts
@@ -123,14 +118,7 @@ public class NotificationServiceApplication {
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
     public void publishNotification(@RequestBody PublishRequestBody body) throws IOException {
         try (Jedis jedis = jedisPool.getResource()) {
-            String notificationKey = notificationsForAlertKey(body.alert_id);
-
-            HashSet<String> deviceIds = new HashSet<>();
-            for (String uid : jedis.smembers(notificationKey)) {
-                deviceIds.addAll(jedis.smembers(devicesForUidKey(uid)));
-            }
-
-            // push notification to all devices
+            Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alert_id);
             for (String deviceId : deviceIds) {
                 pushNotificationService.push(body, deviceId);
             }
@@ -145,11 +133,9 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> unregisterDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.srem(devicesForUidKey(uid.get()), body.registration_token); // remove device from user
-                LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
-                return new ResponseEntity<>("", HttpStatus.OK);
-            }
+            notificationStore.removeDeviceForUid(body.registration_token, uid.get());
+            LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
+            return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
@@ -159,11 +145,9 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> unregisterSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            try (Jedis jedis = jedisPool.getResource()) {
-                jedis.srem(notificationsForAlertKey(body.alert_id), uid.get());
-                LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
-                return new ResponseEntity<>("", HttpStatus.OK);
-            }
+            notificationStore.removeAlertForUid(body.alert_id, uid.get());
+            LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
+            return new ResponseEntity<>("", HttpStatus.OK);
         }
         return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
