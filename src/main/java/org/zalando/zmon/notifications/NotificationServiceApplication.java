@@ -17,6 +17,7 @@ import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.push.GooglePushNotificationService;
 import org.zalando.zmon.notifications.push.PushNotificationService;
 import org.zalando.zmon.notifications.store.NotificationStore;
+import org.zalando.zmon.notifications.store.PreSharedKeyStore;
 import org.zalando.zmon.notifications.store.RedisNotificationStore;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -54,6 +55,11 @@ public class NotificationServiceApplication {
         return new RedisNotificationStore(jedisPool);
     }
 
+    @Bean
+    PreSharedKeyStore getKeyStore(NotificationServiceConfig config) {
+        return new PreSharedKeyStore(config.getSharedKeys());
+    }
+
     // request payloads
 
     public static class DeviceRequestBody {
@@ -87,6 +93,9 @@ public class NotificationServiceApplication {
     @Autowired
     NotificationStore notificationStore;
 
+    @Autowired
+    PreSharedKeyStore keyStore;
+
     // registering
 
     @RequestMapping(value = "/api/v1/device", method = RequestMethod.POST)
@@ -117,13 +126,33 @@ public class NotificationServiceApplication {
     // publishing new alerts
 
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
-    public void publishNotification(@RequestBody PublishRequestBody body) throws IOException {
+    public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
+        boolean authorized = false;
+
+        if(oauthHeader.startsWith("Bearer")) {
+            Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+            if (uid.isPresent()) {
+                authorized = true;
+            }
+        }
+        else if(oauthHeader.startsWith("PreShared")) {
+            if(keyStore.isKeyValid(oauthHeader.replace("PreShared ", ""))) {
+                authorized = true;
+            }
+        }
+
+        if(!authorized) {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+
         Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alert_id);
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);
         }
 
         LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
+
+        return new ResponseEntity<>("", HttpStatus.OK);
     }
 
     // Unregistering

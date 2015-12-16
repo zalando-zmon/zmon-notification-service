@@ -110,6 +110,7 @@ public class NotificationServiceApplicationWebTest {
         // publish
         mvc.perform(
                 post("/api/v1/publish").
+                        header("Authorization", "Bearer 6334ff68-ba2e-4b07-8e67-9304c55f8308").
                         contentType(MediaType.APPLICATION_JSON_UTF8).
                         content("{" +
                                     "\"alert_id\" : "+ ALERT + "," +
