@@ -68,7 +68,7 @@ public class MobileController {
         }
 
         URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/active-alerts").addParameter("team", team).build();
-        final String r = Request.Get(uri).useExpectContinue().execute().returnContent().asString();
+        final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
         return new ResponseEntity<>( node, HttpStatus.OK);
