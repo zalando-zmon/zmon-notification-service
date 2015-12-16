@@ -32,13 +32,13 @@ public class MobileController {
     ObjectMapper mapper;
 
     @RequestMapping(path="alert", method= RequestMethod.GET)
-    public ResponseEntity<JsonNode> getAllAlerts(@RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
+    public ResponseEntity<JsonNode> getAllAlerts(@RequestParam(value="team", required=false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
             return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert").build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert").addParameter("team", team).build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
@@ -57,6 +57,20 @@ public class MobileController {
 
         JsonNode node = mapper.readTree(r);
 
+        return new ResponseEntity<>( node, HttpStatus.OK);
+    }
+
+    @RequestMapping(path="active-alerts", method=RequestMethod.GET)
+    public ResponseEntity<JsonNode> getActiveAlerts(@RequestParam(value="team", required=false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (!uid.isPresent()) {
+            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+        }
+
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/active-alerts").addParameter("team", team).build();
+        final String r = Request.Get(uri).useExpectContinue().execute().returnContent().asString();
+
+        JsonNode node = mapper.readTree(r);
         return new ResponseEntity<>( node, HttpStatus.OK);
     }
 
