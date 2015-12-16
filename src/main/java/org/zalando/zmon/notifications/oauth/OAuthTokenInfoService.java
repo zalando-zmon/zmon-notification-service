@@ -1,4 +1,4 @@
-package org.zalando.zmon.notifications;
+package org.zalando.zmon.notifications.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,21 +16,22 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by jmussler on 8/12/15.
  */
-public class TokenInfoService {
-    private static final Logger LOG = LoggerFactory.getLogger(TokenInfoService.class);
+public class OAuthTokenInfoService implements TokenInfoService {
+    private static final Logger LOG = LoggerFactory.getLogger(OAuthTokenInfoService.class);
 
-    private final String url;
+    private final String serviceUrl;
     private final Executor executor;
     private final ObjectMapper mapper = new ObjectMapper();
 
     // oauthtoken -> uid
     private final Cache<String, String> tokenCache = CacheBuilder.newBuilder().expireAfterWrite(600, TimeUnit.SECONDS).build();
 
-    public TokenInfoService(String url) {
-        this.url = url;
+    public OAuthTokenInfoService(String serviceUrl) {
+        this.serviceUrl = serviceUrl;
         this.executor = Executor.newInstance();
     }
 
+    @Override
     public Optional<String> lookupUid(String authorizationHeaderValue) {
         if (Strings.isNullOrEmpty(authorizationHeaderValue)) {
             return Optional.empty();
@@ -52,7 +53,7 @@ public class TokenInfoService {
 
     private String queryOAuthServer(String token) throws Exception {
         // throws exception in != 200 status code
-        String body = executor.execute(Request.Get(url + token)).returnContent().asString();
+        String body = executor.execute(Request.Get(serviceUrl + token)).returnContent().asString();
         JsonNode result = mapper.readTree(body);
         if (result.has("uid") && result.get("expires_in").asInt() > 0) {
             return result.get("uid").asText();

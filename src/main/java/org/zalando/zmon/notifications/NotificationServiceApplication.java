@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
+import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.push.GooglePushNotificationService;
 import org.zalando.zmon.notifications.push.PushNotificationService;
 import redis.clients.jedis.Jedis;
@@ -25,7 +27,7 @@ import java.util.Optional;
 public class NotificationServiceApplication {
 
     @Value("${oauthTokenInfoService.url:}")
-    String tokenInfoServiceUrl;
+    String oauthTokenInfoServiceUrl;
 
     @Value("${pushNotificationService.url:}")
     String pushNotificationServiceUrl;
@@ -38,7 +40,7 @@ public class NotificationServiceApplication {
 
     @Bean
     TokenInfoService getTokenInfoService() {
-        return new TokenInfoService(tokenInfoServiceUrl);
+        return new OAuthTokenInfoService(oauthTokenInfoServiceUrl);
     }
 
     @Bean
