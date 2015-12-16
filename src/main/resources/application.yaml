@@ -1,0 +1,11 @@
+notifications:
+  redis_uri: redis://localhost:6379/0
+
+  oauth_info_service_url: https://localhost:8443
+
+  google_push_service_url: https://gcm-http.googleapis.com/gcm/send
+  google_push_service_api_key:
+
+mobile:
+  data_service_url:
+  read_scope:
