@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -70,16 +71,50 @@ public class NotificationServiceApplication {
         public int alert_id;
     }
 
+    // defined by google cloud messaging API
+    public static class PublishNotificationPart {
+        public String title;
+        public String body;
+        public String icon;
+
+        public PublishNotificationPart() {
+
+        }
+
+        public PublishNotificationPart(String t, String b, String i) {
+            icon = i;
+            body = b;
+            title = t;
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("title", title)
+                    .add("body", body)
+                    .add("icon", icon).toString();
+        }
+    }
+
     public static class PublishRequestBody {
         public int alert_id;
-        public JsonNode data;
-        public JsonNode notification;
+        public String entity_id;
+        public PublishNotificationPart notification;
+
+        public PublishNotificationPart getNotification() {
+            return notification;
+        }
+
+        public void setNotification(PublishNotificationPart notification) {
+            this.notification = notification;
+        }
 
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
                     .add("alert_id", alert_id)
-                    .add("notification", notification.get("title"))
+                    .add("notification", notification)
+                    .add("entity_id", entity_id)
                     .toString();
         }
     }

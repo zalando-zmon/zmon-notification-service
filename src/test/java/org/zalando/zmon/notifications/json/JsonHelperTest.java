@@ -22,12 +22,11 @@ public class JsonHelperTest {
         ObjectMapper objectMapper = new ObjectMapper();
 
         publishRequestBody.alert_id = 42;
-        publishRequestBody.data = objectMapper.readTree("{\"entity\" : \"customer4.db.zalando\"}");
-        publishRequestBody.notification = objectMapper.readTree("{\"title\" : \"No database connection to master\"}");
-
+        publishRequestBody.entity_id = "customer4.db.zalando";
+        publishRequestBody.notification = new NotificationServiceApplication.PublishNotificationPart("No database connection to master","Connection refused", "");
         StringEntity stringEntity = JsonHelper.jsonEntityFor("device-id-1", publishRequestBody);
         assertEquals(
-                "{\"data\":{\"alert_id\":42,\"data\":{\"entity\":\"customer4.db.zalando\"},\"notification\":{\"title\":\"No database connection to master\"}},\"to\":\"device-id-1\"}",
+                "{\"to\":\"device-id-1\",\"data\":{\"alert_id\":42,\"entity_id\":\"customer4.db.zalando\"},\"notification\":{\"title\":\"No database connection to master\",\"icon\":\"\",\"body\":\"Connection refused\"}}",
                 stringEntityContent(stringEntity)
         );
 

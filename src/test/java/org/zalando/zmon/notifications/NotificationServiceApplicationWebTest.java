@@ -114,8 +114,8 @@ public class NotificationServiceApplicationWebTest {
                         contentType(MediaType.APPLICATION_JSON_UTF8).
                         content("{" +
                                     "\"alert_id\" : "+ ALERT + "," +
-                                    "\"data\": {\"entity\":\"customer4.db.zalando\"}," +
-                                    "\"notification\": {\"title\":\"No database connection to master\"}" +
+                                    "\"entity_id\":\"customer5.db.zalando\"," +
+                                    "\"notification\": {\"title\":\"No database connection to master\",\"body\":\"\",\"icon\":\"\"}" +
                                 "}"
                         )
         ).andExpect(
@@ -123,7 +123,7 @@ public class NotificationServiceApplicationWebTest {
         );
 
         assertEquals(
-                "stub-pushed-notifications: {"+DEVICE+"=[PublishRequestBody{alert_id="+ALERT+", notification=\"No database connection to master\"}]}",
+                "stub-pushed-notifications: {6f18fb92-dbe3-41ac-ab8e-82be7f30e246=[PublishRequestBody{alert_id="+ALERT+", notification=PublishNotificationPart{title=No database connection to master, body=, icon=}, entity_id=customer5.db.zalando}]}",
                 application.pushNotificationService.toString()
         );
     }

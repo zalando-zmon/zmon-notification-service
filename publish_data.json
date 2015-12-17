@@ -1,5 +1,6 @@
 {
   "alert_id": 2892,
-  "data": {"entity":"customer4.db.zalando"},
-  "notification": {"title":"No database connection to master"}
+  "entity_id":"customer4.db.zalando",
+  "notification": {"title": "No database connection to master",
+                   "body": "Connection refused"}
 }
