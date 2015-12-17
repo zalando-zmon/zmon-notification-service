@@ -14,12 +14,16 @@ public class JsonHelper {
 
     private static final ObjectMapper mapper = new ObjectMapper(); // Setup Jackson
 
-    public static StringEntity jsonEntityFor(NotificationServiceApplication.PublishRequestBody notification) throws JsonProcessingException {
-        ObjectNode objectNode = mapper.createObjectNode();
-        objectNode.put("alert_id", notification.alert_id);
-        objectNode.set("data", notification.data);
-        objectNode.set("notification", notification.notification);
-        String json = mapper.writeValueAsString(objectNode);
+    public static StringEntity jsonEntityFor(String deviceToken, NotificationServiceApplication.PublishRequestBody notification) throws JsonProcessingException {
+       ObjectNode request = mapper.createObjectNode();
+
+        ObjectNode data = request.putObject("data");
+        data.put("alert_id", notification.alert_id);
+        data.set("data", notification.data);
+        data.set("notification", notification.notification);
+        request.put("to", deviceToken);
+
+        String json = mapper.writeValueAsString(request);
         StringEntity result = new StringEntity(json, UTF_8);
         result.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
         return result;

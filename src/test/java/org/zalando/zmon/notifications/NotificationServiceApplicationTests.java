@@ -18,7 +18,7 @@ public class NotificationServiceApplicationTests {
     @Test
     public void contextLoads() {
         assertEquals(
-                "GooglePushNotificationService{serviceUrl=https://gcm-http.googleapis.com/gcm/send, googleApiKey=}",
+                "GooglePushNotificationService{serviceUrl=https://gcm-http.googleapis.com/gcm/send, googleApiKey=...}",
                 application.getPushNotificationService().toString());
         assertEquals(
                 "OAuthTokenInfoService{serviceUrl=https://localhost:8443}",

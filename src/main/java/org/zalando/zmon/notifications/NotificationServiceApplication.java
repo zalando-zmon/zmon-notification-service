@@ -129,7 +129,10 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
         boolean authorized = false;
 
-        if(oauthHeader.startsWith("Bearer")) {
+        if(null == oauthHeader) {
+            // header not set
+        }
+        else if(oauthHeader.startsWith("Bearer")) {
             Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
             if (uid.isPresent()) {
                 authorized = true;

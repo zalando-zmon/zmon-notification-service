@@ -25,9 +25,9 @@ public class JsonHelperTest {
         publishRequestBody.data = objectMapper.readTree("{\"entity\" : \"customer4.db.zalando\"}");
         publishRequestBody.notification = objectMapper.readTree("{\"title\" : \"No database connection to master\"}");
 
-        StringEntity stringEntity = JsonHelper.jsonEntityFor(publishRequestBody);
+        StringEntity stringEntity = JsonHelper.jsonEntityFor("device-id-1", publishRequestBody);
         assertEquals(
-                "{\"alert_id\":42,\"data\":{\"entity\":\"customer4.db.zalando\"},\"notification\":{\"title\":\"No database connection to master\"}}",
+                "{\"data\":{\"alert_id\":42,\"data\":{\"entity\":\"customer4.db.zalando\"},\"notification\":{\"title\":\"No database connection to master\"}},\"to\":\"device-id-1\"}",
                 stringEntityContent(stringEntity)
         );
 
