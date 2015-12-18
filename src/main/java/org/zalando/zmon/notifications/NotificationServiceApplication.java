@@ -1,6 +1,5 @@
 package org.zalando.zmon.notifications;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -137,8 +135,32 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> registerDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
+
+            if(body.registration_token == null || "".equals(body.registration_token)) {
+                return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+            }
+
             notificationStore.addDeviceForUid(body.registration_token, uid.get());
             LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
+
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/device", method = RequestMethod.DELETE)
+    public ResponseEntity<String> unregisterDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+
+            if(body.registration_token == null || "".equals(body.registration_token)) {
+                return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+            }
+
+            notificationStore.removeDeviceForUid(body.registration_token, uid.get());
+
+            LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
@@ -155,6 +177,17 @@ public class NotificationServiceApplication {
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
+    }
+
+    @RequestMapping(value = "/api/v1/subscription", method = RequestMethod.DELETE)
+    public ResponseEntity<String> unregisterSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            notificationStore.removeAlertForUid(body.alert_id, uid.get());
+            LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
+            return new ResponseEntity<>("", HttpStatus.OK);
+        }
+        return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
 
@@ -191,31 +224,6 @@ public class NotificationServiceApplication {
         LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
 
         return new ResponseEntity<>("", HttpStatus.OK);
-    }
-
-    // Unregistering
-
-    @RequestMapping(value = "/api/v1/device", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
-        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
-        if (uid.isPresent()) {
-            notificationStore.removeDeviceForUid(body.registration_token, uid.get());
-            LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
-            return new ResponseEntity<>("", HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
-        }
-    }
-
-    @RequestMapping(value = "/api/v1/subscription", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
-        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
-        if (uid.isPresent()) {
-            notificationStore.removeAlertForUid(body.alert_id, uid.get());
-            LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
-            return new ResponseEntity<>("", HttpStatus.OK);
-        }
-        return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
     public static void main(String[] args) {
