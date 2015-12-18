@@ -149,18 +149,18 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/device", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    @RequestMapping(value = "/api/v1/device/{registration_token}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> unregisterDevice(@PathVariable(value = "registration_token") String registrationToken, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
 
-            if(body.registration_token == null || "".equals(body.registration_token)) {
+            if(registrationToken == null || "".equals(registrationToken)) {
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
-            notificationStore.removeDeviceForUid(body.registration_token, uid.get());
+            notificationStore.removeDeviceForUid(registrationToken, uid.get());
 
-            LOG.info("Removed device {} for uid {}.", body.registration_token, uid.get());
+            LOG.info("Removed device {} for uid {}.", registrationToken, uid.get());
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
@@ -179,12 +179,12 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/subscription", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    @RequestMapping(value = "/api/v1/subscription/{alert_id}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> unregisterSubscription(@PathVariable(value="alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            notificationStore.removeAlertForUid(body.alert_id, uid.get());
-            LOG.info("Removed alert {} for uid {}.", body.alert_id, uid.get());
+            notificationStore.removeAlertForUid(alertId, uid.get());
+            LOG.info("Removed alert {} for uid {}.", alertId, uid.get());
             return new ResponseEntity<>("", HttpStatus.OK);
         }
         return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
