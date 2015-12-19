@@ -190,6 +190,15 @@ public class NotificationServiceApplication {
         return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
+    @RequestMapping(value="/api/v1/user/subscriptions", method = RequestMethod.GET)
+    public ResponseEntity<Collection<Integer>> getRegisteredAlerts(@RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            return new ResponseEntity<>(notificationStore.alertsForUid(uid.get()), HttpStatus.OK);
+        }
+        return new ResponseEntity<>((Collection<Integer>)null, HttpStatus.UNAUTHORIZED);
+    }
+
 
     // publishing new alerts
 

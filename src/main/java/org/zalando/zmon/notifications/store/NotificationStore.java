@@ -9,5 +9,6 @@ public interface NotificationStore {
     void removeDeviceForUid(String deviceId, String uid);
     void removeAlertForUid(int alertId, String uid);
 
+    Collection<Integer> alertsForUid(String uid);
     Collection<String> devicesForAlerts(int alertId);
 }

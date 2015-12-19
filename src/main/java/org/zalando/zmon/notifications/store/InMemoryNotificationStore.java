@@ -10,6 +10,7 @@ import java.util.Collection;
 public class InMemoryNotificationStore implements NotificationStore {
     private final Multimap<String, String> devices = ArrayListMultimap.create();
     private final Multimap<Integer, String> alerts = ArrayListMultimap.create();
+    private final Multimap<String, Integer> alertsForUid = ArrayListMultimap.create();
 
     @Override
     public void addDeviceForUid(String deviceId, String uid) {
@@ -29,6 +30,11 @@ public class InMemoryNotificationStore implements NotificationStore {
     @Override
     public void removeAlertForUid(int alertId, String uid) {
         throw new NotImplementedException();
+    }
+
+    @Override
+    public Collection<Integer> alertsForUid(String uid) {
+        return alertsForUid.get(uid);
     }
 
     @Override

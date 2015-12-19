@@ -3,8 +3,10 @@ package org.zalando.zmon.notifications.store;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 
 public class RedisNotificationStore implements NotificationStore {
 
@@ -24,6 +26,7 @@ public class RedisNotificationStore implements NotificationStore {
     @Override
     public void addAlertForUid(int alertId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
+            jedis.sadd(alertsForUidKey(uid), ""+alertId);
             jedis.sadd(notificationsForAlertKey(alertId), uid);     // this redis set contains all the users registered for a specific alert id
         }
     }
@@ -38,7 +41,20 @@ public class RedisNotificationStore implements NotificationStore {
     @Override
     public void removeAlertForUid(int alertId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
+            jedis.srem(alertsForUidKey(uid), ""+alertId);
             jedis.srem(notificationsForAlertKey(alertId), uid);
+        }
+    }
+
+    @Override
+    public Collection<Integer> alertsForUid(String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            List<Integer> alertIds = new ArrayList();
+            Collection<String> ids = jedis.smembers(alertsForUidKey(uid));
+            for(String id : ids) {
+                alertIds.add(Integer.parseInt(id));
+            }
+            return alertIds;
         }
     }
 
@@ -58,11 +74,15 @@ public class RedisNotificationStore implements NotificationStore {
 
     // build redis key for sets containing all devices for a given uid
     private String devicesForUidKey(String uid) {
-        return String.format("zmon:push:%s", uid);
+        return String.format("zmon:push:user-devices:%s", uid);
+    }
+
+    private String alertsForUidKey(String uid) {
+        return "zmon:push:alerts-for-uid:" + uid;
     }
 
     // build redis key for sets containing all devices subscribed to given alertId
     private String notificationsForAlertKey(int alertId) {
-        return String.format("zmon:alert:%d", alertId);
+        return String.format("zmon:push:uids-for-alert:%d", alertId);
     }
 }
