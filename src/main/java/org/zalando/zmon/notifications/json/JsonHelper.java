@@ -18,6 +18,8 @@ public class JsonHelper {
         ObjectNode request = mapper.createObjectNode();
 
         request.put("to", deviceToken);
+        request.put("content_available", true);
+        request.put("priority", "high");
 
         ObjectNode data = request.putObject("data");
         data.put("alert_id", notification.alert_id);
@@ -27,6 +29,7 @@ public class JsonHelper {
         notify.put("title", notification.notification.title);
         notify.put("icon", notification.notification.icon);
         notify.put("body", notification.notification.body);
+        notify.put("sound", "default");
 
         String json = mapper.writeValueAsString(request);
         StringEntity result = new StringEntity(json, UTF_8);
