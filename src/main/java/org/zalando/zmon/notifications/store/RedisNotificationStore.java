@@ -26,7 +26,7 @@ public class RedisNotificationStore implements NotificationStore {
     @Override
     public void addAlertForUid(int alertId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.sadd(alertsForUidKey(uid), ""+alertId);
+            jedis.sadd(alertsForUidKey(uid), "" + alertId);
             jedis.sadd(notificationsForAlertKey(alertId), uid);     // this redis set contains all the users registered for a specific alert id
         }
     }
@@ -41,17 +41,17 @@ public class RedisNotificationStore implements NotificationStore {
     @Override
     public void removeAlertForUid(int alertId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.srem(alertsForUidKey(uid), ""+alertId);
+            jedis.srem(alertsForUidKey(uid), "" + alertId);
             jedis.srem(notificationsForAlertKey(alertId), uid);
         }
     }
 
     @Override
     public Collection<Integer> alertsForUid(String uid) {
-        try(Jedis jedis = jedisPool.getResource()) {
+        try (Jedis jedis = jedisPool.getResource()) {
             List<Integer> alertIds = new ArrayList();
             Collection<String> ids = jedis.smembers(alertsForUidKey(uid));
-            for(String id : ids) {
+            for (String id : ids) {
                 alertIds.add(Integer.parseInt(id));
             }
             return alertIds;

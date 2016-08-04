@@ -136,7 +136,7 @@ public class NotificationServiceApplication {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
 
-            if(body.registration_token == null || "".equals(body.registration_token)) {
+            if (body.registration_token == null || "".equals(body.registration_token)) {
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
@@ -154,7 +154,7 @@ public class NotificationServiceApplication {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
 
-            if(registrationToken == null || "".equals(registrationToken)) {
+            if (registrationToken == null || "".equals(registrationToken)) {
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
@@ -180,7 +180,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/subscription/{alert_id}", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterSubscription(@PathVariable(value="alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> unregisterSubscription(@PathVariable(value = "alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             notificationStore.removeAlertForUid(alertId, uid.get());
@@ -190,13 +190,13 @@ public class NotificationServiceApplication {
         return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
     }
 
-    @RequestMapping(value="/api/v1/user/subscriptions", method = RequestMethod.GET)
+    @RequestMapping(value = "/api/v1/user/subscriptions", method = RequestMethod.GET)
     public ResponseEntity<Collection<Integer>> getRegisteredAlerts(@RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             return new ResponseEntity<>(notificationStore.alertsForUid(uid.get()), HttpStatus.OK);
         }
-        return new ResponseEntity<>((Collection<Integer>)null, HttpStatus.UNAUTHORIZED);
+        return new ResponseEntity<>((Collection<Integer>) null, HttpStatus.UNAUTHORIZED);
     }
 
 
@@ -206,22 +206,20 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
         boolean authorized = false;
 
-        if(null == oauthHeader) {
+        if (null == oauthHeader) {
             // header not set
-        }
-        else if(oauthHeader.startsWith("Bearer")) {
+        } else if (oauthHeader.startsWith("Bearer")) {
             Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
             if (uid.isPresent()) {
                 authorized = true;
             }
-        }
-        else if(oauthHeader.startsWith("PreShared")) {
-            if(keyStore.isKeyValid(oauthHeader.replace("PreShared ", ""))) {
+        } else if (oauthHeader.startsWith("PreShared")) {
+            if (keyStore.isKeyValid(oauthHeader.replace("PreShared ", ""))) {
                 authorized = true;
             }
         }
 
-        if(!authorized) {
+        if (!authorized) {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 

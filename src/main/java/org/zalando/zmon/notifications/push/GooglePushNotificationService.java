@@ -6,7 +6,6 @@ import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.zalando.zmon.notifications.NotificationServiceApplication;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class GooglePushNotificationService implements PushNotificationService {
 
     public GooglePushNotificationService(String serviceUrl, String googleApiKey) {
         LOG.info("Setting Google Service Url to {}", serviceUrl);
-        LOG.info("Setting Google API Key to ...{}", googleApiKey.substring(Math.max(0, googleApiKey.length()-4)));
+        LOG.info("Setting Google API Key to ...{}", googleApiKey.substring(Math.max(0, googleApiKey.length() - 4)));
 
         this.serviceUrl = serviceUrl;
         this.googleApiKey = googleApiKey;
@@ -44,7 +43,7 @@ public class GooglePushNotificationService implements PushNotificationService {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("serviceUrl", serviceUrl)
-                .add("googleApiKey", "..."+googleApiKey.substring(Math.max(0, googleApiKey.length()-4)))
+                .add("googleApiKey", "..." + googleApiKey.substring(Math.max(0, googleApiKey.length() - 4)))
                 .toString();
     }
 }
