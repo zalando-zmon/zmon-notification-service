@@ -36,9 +36,4 @@ public class JsonHelperTest {
 
     }
 
-    private String stringEntityContent(StringEntity stringEntity) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        stringEntity.writeTo(byteArrayOutputStream);
-        return new String(byteArrayOutputStream.toByteArray());
-    }
 }
