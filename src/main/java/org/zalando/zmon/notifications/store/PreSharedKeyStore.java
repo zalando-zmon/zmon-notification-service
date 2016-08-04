@@ -16,23 +16,23 @@ public class PreSharedKeyStore {
     private final Map<String, Long> keys;
 
     public PreSharedKeyStore(Map<String, Long> keys) {
-        if(null==keys) {
+        if (null == keys) {
             keys = new HashMap<>();
         }
 
-        for(Map.Entry<String, Long> entry: keys.entrySet()) {
-            LOG.info("Adding preshared key={}...", entry.getKey().substring(0,4));
+        for (Map.Entry<String, Long> entry : keys.entrySet()) {
+            LOG.info("Adding preshared key={}...", entry.getKey().substring(0, 4));
         }
 
         this.keys = keys;
     }
 
     public boolean isKeyValid(String key) {
-        if(keys.containsKey(key)) {
+        if (keys.containsKey(key)) {
             LOG.info("Validity: current={} until={} delta={}", System.currentTimeMillis(), keys.get(key), keys.get(key) - System.currentTimeMillis());
         }
 
         return keys.containsKey(key)
-                && ( System.currentTimeMillis() < keys.get(key));
+                && (System.currentTimeMillis() < keys.get(key));
     }
 }

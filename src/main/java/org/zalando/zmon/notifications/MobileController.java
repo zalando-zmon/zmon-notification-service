@@ -19,7 +19,7 @@ import java.util.Optional;
  * Created by jmussler on 12/16/15.
  */
 @RestController
-@RequestMapping(path="/api/v1/mobile/")
+@RequestMapping(path = "/api/v1/mobile/")
 public class MobileController {
 
     @Autowired
@@ -31,54 +31,54 @@ public class MobileController {
     @Autowired
     ObjectMapper mapper;
 
-    @RequestMapping(path="alert", method= RequestMethod.GET)
-    public ResponseEntity<JsonNode> getAllAlerts(@RequestParam(value="team", required=false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
+    @RequestMapping(path = "alert", method = RequestMethod.GET)
+    public ResponseEntity<JsonNode> getAllAlerts(@RequestParam(value = "team", required = false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
-            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
         URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert").addParameter("team", team).build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
-        return new ResponseEntity<>( node, HttpStatus.OK);
+        return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
-    @RequestMapping(path="alert/{alert_id}", method=RequestMethod.GET)
-    public ResponseEntity<JsonNode> getAlertDetails(@PathVariable(value="alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
+    @RequestMapping(path = "alert/{alert_id}", method = RequestMethod.GET)
+    public ResponseEntity<JsonNode> getAlertDetails(@PathVariable(value = "alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
-            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
-        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert/"+alertId).build();
+        URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/alert/" + alertId).build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
 
-        return new ResponseEntity<>( node, HttpStatus.OK);
+        return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
-    @RequestMapping(path="active-alerts", method=RequestMethod.GET)
-    public ResponseEntity<JsonNode> getActiveAlerts(@RequestParam(value="team", required=false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
+    @RequestMapping(path = "active-alerts", method = RequestMethod.GET)
+    public ResponseEntity<JsonNode> getActiveAlerts(@RequestParam(value = "team", required = false, defaultValue = "*") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
-            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
         URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/active-alerts").addParameter("team", team).build();
         final String r = Request.Get(uri).addHeader("Authorization", oauthHeader).useExpectContinue().execute().returnContent().asString();
 
         JsonNode node = mapper.readTree(r);
-        return new ResponseEntity<>( node, HttpStatus.OK);
+        return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
-    @RequestMapping(path="all-teams", method=RequestMethod.GET)
+    @RequestMapping(path = "all-teams", method = RequestMethod.GET)
     public ResponseEntity<JsonNode> getAllTeams(@RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
-            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
         URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/all-teams").build();
@@ -86,14 +86,14 @@ public class MobileController {
 
         JsonNode node = mapper.readTree(r);
 
-        return new ResponseEntity<>( node, HttpStatus.OK);
+        return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
-    @RequestMapping(path="status", method=RequestMethod.GET)
+    @RequestMapping(path = "status", method = RequestMethod.GET)
     public ResponseEntity<JsonNode> getStatus(@RequestHeader(value = "Authorization", required = false) String oauthHeader) throws URISyntaxException, IOException {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (!uid.isPresent()) {
-            return new ResponseEntity<>((JsonNode)null, HttpStatus.UNAUTHORIZED);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
         URI uri = new URIBuilder().setPath(config.dataServiceUrl + "/api/v1/mobile/status").build();
@@ -101,7 +101,7 @@ public class MobileController {
 
         JsonNode node = mapper.readTree(r);
 
-        return new ResponseEntity<>( node, HttpStatus.OK);
+        return new ResponseEntity<>(node, HttpStatus.OK);
     }
 
 }
