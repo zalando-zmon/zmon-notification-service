@@ -84,7 +84,7 @@ public class TwilioCallbackAPI {
 
         return "<Response>\n" +
                 "        <Say voice=\"woman\">" + alert.getName() + "</Say>\n" +
-                "        <Gather action=\"/api/v1/twilio/response\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
+                "        <Gather action=\"/api/v1/twilio/response?notification=" + id + "\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
                 "          <Say voice=\"woman\">Please enter 1 for ACK and 6 for Resolve.</Say>\n" +
                 "        </Gather>\n" +
                 "</Response>";
@@ -92,17 +92,19 @@ public class TwilioCallbackAPI {
 
     @RequestMapping(path="/response", method = RequestMethod.POST, produces = "application/xml")
     public String ackNotification(@RequestParam Map<String, String> allParams) {
-        log.info("Receiving request for params={}", allParams);
+        log.info("Receiving Twilio response for params={}", allParams);
         if(!allParams.containsKey("Digits")) {
             return "<Response><Say>ZMON Response Error</Say></Response>";
         }
 
         String digits = allParams.get("Digits");
         if("1".equals(digits)) {
-            return "<Response><Say>Acknowledged</Say></Response>";
+            log.info("Received ACK for alert");
+            return "<Response><Say>Alert Acknowledged</Say></Response>";
         }
         else if("6".equals(digits)) {
-            return "<Response><Say>Resolved</Say></Response>";
+            log.info("Received RESOLVED for alert");
+            return "<Response><Say>Alert Resolved</Say></Response>";
         }
         else {
             return "<Response><Say>ZMON Response Error</Say></Response>";
