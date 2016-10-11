@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /**
  * Created by jmussler on 11.10.16.
  */
@@ -28,8 +30,10 @@ public class TwilioCallbackAPI {
     }
 
     @RequestMapping(path="/response", method = RequestMethod.POST, produces = "application/xml")
-    public String ackNotification(@RequestParam(name = "id") String id, @RequestParam(name="Digits") String digits) {
-        log.info("Receiving request for id={} digits={}", id, digits);
+    public String ackNotification(@RequestParam Map<String, String> allParams) {
+        log.info("Receiving request for params={}", allParams);
+        String digits = "1";
+
         if("1".equals(digits)) {
             return "<Response><Say>Acknowledged</Say></Response>";
         }
