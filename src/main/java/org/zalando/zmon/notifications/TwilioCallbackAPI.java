@@ -45,7 +45,7 @@ public class TwilioCallbackAPI {
     private final Logger log = LoggerFactory.getLogger(TwilioCallbackAPI.class);
 
     @Bean
-    TwilioNotificationStore getNotificationStore() throws URISyntaxException {
+    TwilioNotificationStore getTwilioNotificationStore() throws URISyntaxException {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
         return new TwilioNotificationStore(jedisPool, mapper);
