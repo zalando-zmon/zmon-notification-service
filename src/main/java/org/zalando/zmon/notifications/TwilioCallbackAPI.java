@@ -72,7 +72,7 @@ public class TwilioCallbackAPI {
         }
 
         Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
-        Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(config.getTwilioPhoneNumber()), new PhoneNumber(alert.getNumbers().get(0)), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+        Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
 
         return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
     }
