@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "/api/v1/twilio")
 public class TwilioCallbackAPI {
 
-    @RequestMapping(method = RequestMethod.GET, produces = "application/xml")
+    @RequestMapping(method = RequestMethod.POST, produces = "application/xml")
     public String getDummyResult(@RequestParam(name = "id") String id) {
         return "<Response>\n" +
                 "        <Say voice=\"woman\">ZMON Alert Active - PLANB ELB DOWN</Say>\n" +
