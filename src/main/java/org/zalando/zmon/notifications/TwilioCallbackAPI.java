@@ -21,7 +21,7 @@ public class TwilioCallbackAPI {
         log.info("Receiving request for id={}", id);
         return "<Response>\n" +
                 "        <Say voice=\"woman\">ZMON Alert Active - PLANB ELB DOWN</Say>\n" +
-                "        <Gather action=\"/api/v1/twilio/response\" method=\"POST\" timeout=\"10\" finishOnKey=\"*\">\n" +
+                "        <Gather action=\"/api/v1/twilio/response\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
                 "          <Say voice=\"woman\">Please enter 1 for ACK and 6 for Resolve.</Say>\n" +
                 "        </Gather>\n" +
                 "</Response>";
