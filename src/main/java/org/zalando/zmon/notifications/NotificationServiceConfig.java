@@ -18,6 +18,11 @@ public class NotificationServiceConfig {
 
     private String redisUri;
 
+    private String twilioApiKey;
+    private String twilioUser;
+    private String twilioPhoneNumber;
+    private String domain;
+
     public Map<String, Long> sharedKeys;
 
     public Map<String, Long> getSharedKeys() {
@@ -61,5 +66,37 @@ public class NotificationServiceConfig {
 
     public void setRedisUri(String redisUri) {
         this.redisUri = redisUri;
+    }
+
+    public String getTwilioApiKey() {
+        return twilioApiKey;
+    }
+
+    public void setTwilioApiKey(String twilioApiKey) {
+        this.twilioApiKey = twilioApiKey;
+    }
+
+    public String getTwilioUser() {
+        return twilioUser;
+    }
+
+    public void setTwilioUser(String twilioUser) {
+        this.twilioUser = twilioUser;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getTwilioPhoneNumber() {
+        return twilioPhoneNumber;
+    }
+
+    public void setTwilioPhoneNumber(String twilioPhoneNumber) {
+        this.twilioPhoneNumber = twilioPhoneNumber;
     }
 }
