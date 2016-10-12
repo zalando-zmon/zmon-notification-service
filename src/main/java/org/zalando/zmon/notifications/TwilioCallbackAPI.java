@@ -172,7 +172,10 @@ public class TwilioCallbackAPI {
             log.error("Error occured receiving pending notifications");
         }
 
-        log.info("Received pending notifications: count={}", results.size());
+        if (results.size() > 0) {
+            log.info("Received pending notifications: count={}", results.size());
+        }
+
         for (int i = 0; i < results.size(); i++) {
             String[] data = results.get(i).split(":");
             String number = data[0];
@@ -180,11 +183,11 @@ public class TwilioCallbackAPI {
 
             TwilioAlert alert = store.getAlert(uuid);
             if (store.isAck(alert.getAlertId(), alert.getEntityId())) {
-                log.info("Alert is in state ACK: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
+                log.info("Alert is in state ACK skipping call: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
                 continue;
             }
 
-            log.info("Escalation call for: notification={} phone={} alertId={}", uuid, number, alert.getAlertId());
+            log.info("Escalation call: notification={} phone={} alertId={}", uuid, number, alert.getAlertId());
 
             Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(number), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
         }
