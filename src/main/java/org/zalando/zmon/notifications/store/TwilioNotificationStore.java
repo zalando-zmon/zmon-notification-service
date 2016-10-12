@@ -5,6 +5,7 @@ import org.zalando.zmon.notifications.TwilioAlert;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -50,5 +51,66 @@ public class TwilioNotificationStore {
         }
 
         return uuid;
+    }
+
+    public boolean ackAlert(int alertId, String user) {
+        try(Jedis jedis = pool.getResource()) {
+            final String key ="zmon:notify:ack:" + alertId;
+            jedis.set(key, user);
+            jedis.expire(key, 60 * 60);
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean resolveAlert(int alertId) {
+        try(Jedis jedis = pool.getResource()) {
+            final String key = "zmon:notify:ack:" + alertId;
+            jedis.del(key);
+
+            Set<String> keys = jedis.keys("zmon:notifiy:ack:" + alertId + ":*");
+            for(String k : keys) {
+                jedis.del(k);
+            }
+
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean ackAlertEntity(int alertId, String entityId, String user) {
+        try(Jedis jedis = pool.getResource()) {
+            final String key ="zmon:notify:ack:" + alertId + ":" + entityId;
+            jedis.set(key, user);
+            jedis.expire(key, 60 * 60);
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean isAck(int alertId, String entityId) {
+        try(Jedis jedis = pool.getResource()) {
+            String key ="zmon:notify:ack:" + alertId;
+            String value = jedis.get(key);
+            if (null != value) {
+                return true;
+            }
+
+            key ="zmon:notify:ack:" + alertId + ":" + entityId;
+            value = jedis.get(key);
+            if (null != value) {
+                return true;
+            }
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return false;
     }
 }

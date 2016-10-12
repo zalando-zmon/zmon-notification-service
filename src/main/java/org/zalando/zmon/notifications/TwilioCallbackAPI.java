@@ -60,32 +60,54 @@ public class TwilioCallbackAPI {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
-        if (alert.getNumbers().size() <= 0) {
+        if (null != alert.getNumbers() && alert.getNumbers().size() <= 0) {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.BAD_REQUEST);
         }
 
-        log.info("Storing alert={} and triggering call to first number", alert);
+        if (alert.getEventType().equals("ALERT_START")) {
 
-        String uuid = store.storeAlert(alert);
-        if (null == uuid) {
-            return new ResponseEntity<>((JsonNode) null, HttpStatus.INTERNAL_SERVER_ERROR);
+            boolean isAck = store.isAck(alert.getAlertId(), alert.getEntityId());
+            if(isAck) {
+                log.info("Alert start received, but is already ACK: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
+                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
+            }
+
+            log.info("Storing alertId={} and triggering call to first number={}", alert.getAlertId(), alert.getNumbers().get(0));
+
+            String uuid = store.storeAlert(alert);
+            if (null == uuid) {
+                return new ResponseEntity<>((JsonNode) null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+
+            Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
+            Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
         }
+        else {
+            log.info("Alert ended received alertId={}", alert.getAlertId());
+            if (alert.isAlertChanged()) {
+                store.resolveAlert(alert.getAlertId());
+            }
 
-        Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
-        Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
-
-        return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
+            return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
+        }
     }
 
     @RequestMapping(path="/call", method = RequestMethod.POST, produces = "application/xml")
     public String call(@RequestParam(name = "notification") String id) {
-        log.info("Start call request for id={}", id);
+        log.info("Start call request for alertId={}", id);
         TwilioAlert alert = store.getAlert(id);
 
+        String voice = alert.getVoice();
+        if (null == voice || "".equals(voice)) {
+            voice = "woman";
+        }
+
         return "<Response>\n" +
-                "        <Say voice=\"woman\">" + alert.getName() + "</Say>\n" +
+                "        <Say voice=\""+ voice +"\">" + alert.getMessage() + "</Say>\n" +
                 "        <Gather action=\"/api/v1/twilio/response?notification=" + id + "\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
-                "          <Say voice=\"woman\">Please enter 1 for ACK and 6 for Resolve.</Say>\n" +
+                "          <Say voice=\"woman\">Please enter 1 for ACK or 2 for Entity or 6 resolve.</Say>\n" +
                 "        </Gather>\n" +
                 "</Response>";
     }
@@ -97,10 +119,20 @@ public class TwilioCallbackAPI {
             return "<Response><Say>ZMON Response Error</Say></Response>";
         }
 
+        String id = allParams.get("notification");
+        TwilioAlert alert = store.getAlert(id);
+        String phone = allParams.get("To");
+
         String digits = allParams.get("Digits");
         if("1".equals(digits)) {
-            log.info("Received ACK for alert");
+            log.info("Received ACK for alert: id={} phone={}", id, phone);
+            store.ackAlert(alert.getAlertId(), phone);
             return "<Response><Say>Alert Acknowledged</Say></Response>";
+        }
+        else if("2".equals(digits)) {
+            log.info("Received ACK for entity: id={} entity={} phone={}", id, alert.getEntityId(), phone);
+            store.ackAlertEntity(alert.getAlertId(), alert.getEntityId(), phone);
+            return "<Response><Say>Alert Entity Acknowledged</Say></Response>";
         }
         else if("6".equals(digits)) {
             log.info("Received RESOLVED for alert");

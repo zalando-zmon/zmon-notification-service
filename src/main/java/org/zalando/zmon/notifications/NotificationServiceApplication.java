@@ -95,8 +95,8 @@ public class NotificationServiceApplication {
     }
 
     public static class PublishRequestBody {
-        public int alert_id;
-        public String entity_id;
+        public int alertId;
+        public String entityId;
         public PublishNotificationPart notification;
 
         public PublishNotificationPart getNotification() {
@@ -110,9 +110,9 @@ public class NotificationServiceApplication {
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
-                    .add("alert_id", alert_id)
+                    .add("alertId", alertId)
                     .add("notification", notification)
-                    .add("entity_id", entity_id)
+                    .add("entityId", entityId)
                     .toString();
         }
     }
@@ -223,12 +223,12 @@ public class NotificationServiceApplication {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
-        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alert_id);
+        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId);
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);
         }
 
-        LOG.info("Sent alert {} to devices {}.", body.alert_id, deviceIds);
+        LOG.info("Sent alert {} to devices {}.", body.alertId, deviceIds);
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }

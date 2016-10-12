@@ -22,8 +22,8 @@ public class JsonHelper {
         request.put("priority", "high");
 
         ObjectNode data = request.putObject("data");
-        data.put("alert_id", notification.alert_id);
-        data.put("entity_id", notification.entity_id);
+        data.put("alert_id", notification.alertId);
+        data.put("entity_id", notification.entityId);
 
         ObjectNode notify = request.putObject("notification");
         notify.put("title", notification.notification.title);

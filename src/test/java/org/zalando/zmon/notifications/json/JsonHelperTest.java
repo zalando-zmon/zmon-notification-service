@@ -21,8 +21,8 @@ public class JsonHelperTest {
 
         ObjectMapper objectMapper = new ObjectMapper();
 
-        publishRequestBody.alert_id = 42;
-        publishRequestBody.entity_id = "customer4.db.zalando";
+        publishRequestBody.alertId = 42;
+        publishRequestBody.entityId = "customer4.db.zalando";
         publishRequestBody.notification = new NotificationServiceApplication.PublishNotificationPart("No database connection to master","Connection refused", "");
         StringEntity stringEntity = JsonHelper.jsonEntityFor("device-id-1", publishRequestBody);
         /*
