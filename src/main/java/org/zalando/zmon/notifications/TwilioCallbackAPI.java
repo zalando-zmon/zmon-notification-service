@@ -75,10 +75,10 @@ public class TwilioCallbackAPI {
             boolean lock = store.lockAlert(alert.getAlertId(), alert.getEntityId());
             if(!lock) {
                 log.info("Notification skipped, notification in progress: alertId={} entity={}", alert.getAlertId(), alert.getEntityId());
+                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
 
             log.info("Storing alertId={} and triggering call to first number={}", alert.getAlertId(), alert.getNumbers().get(0));
-
             String uuid = store.storeAlert(alert);
             if (null == uuid) {
                 return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
@@ -132,25 +132,26 @@ public class TwilioCallbackAPI {
 
         String phone = allParams.get("To");
         String digits = allParams.get("Digits");
+        String voice = alert.getVoice();
 
         if("1".equals(digits)) {
             log.info("Received ACK for alert: id={} phone={}", id, phone);
             store.ackAlert(alert.getAlertId(), phone);
-            return new ResponseEntity<>("<Response><Say>Alert Acknowledged</Say></Response>", HttpStatus.OK);
+            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("2".equals(digits)) {
             log.info("Received ACK for entity: id={} entity={} phone={}", id, alert.getEntityId(), phone);
             store.ackAlertEntity(alert.getAlertId(), alert.getEntityId(), phone);
-            return new ResponseEntity<>("<Response><Say>Alert Entity Acknowledged</Say></Response>", HttpStatus.OK);
+            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Entity Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("6".equals(digits)) {
             log.info("Received RESOLVED for alert");
             store.resolveAlert(alert.getAlertId());
-            return new ResponseEntity<>("<Response><Say>Alert Resolved</Say></Response>", HttpStatus.OK);
+            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Resolved</Say></Response>", HttpStatus.OK);
         }
         else {
             log.info("Wrong digit received!");
-            return new ResponseEntity<>("<Response><Say>ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
         }
     }
 }

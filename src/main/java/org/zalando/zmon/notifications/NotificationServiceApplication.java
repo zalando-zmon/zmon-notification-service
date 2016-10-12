@@ -228,7 +228,9 @@ public class NotificationServiceApplication {
             pushNotificationService.push(body, deviceId);
         }
 
-        LOG.info("Sent alert {} to devices {}.", body.alertId, deviceIds);
+        if (deviceIds.size() > 0) {
+            LOG.info("Sent alert {} to devices {}.", body.alertId, deviceIds);
+        }
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }

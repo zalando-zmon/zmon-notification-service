@@ -29,7 +29,7 @@ public class PreSharedKeyStore {
 
     public boolean isKeyValid(String key) {
         if (keys.containsKey(key)) {
-            LOG.info("Validity: current={} until={} delta={}", System.currentTimeMillis(), keys.get(key), keys.get(key) - System.currentTimeMillis());
+            // LOG.info("Validity: current={} until={} delta={}", System.currentTimeMillis(), keys.get(key), keys.get(key) - System.currentTimeMillis());
         }
 
         return keys.containsKey(key)
