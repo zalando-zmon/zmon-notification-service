@@ -72,11 +72,16 @@ public class TwilioCallbackAPI {
                 return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
 
+            boolean lock = store.lockAlert(alert.getAlertId(), alert.getEntityId());
+            if(!lock) {
+                log.info("Notification skipped, notification in progress: alertId={} entity={}", alert.getAlertId(), alert.getEntityId());
+            }
+
             log.info("Storing alertId={} and triggering call to first number={}", alert.getAlertId(), alert.getNumbers().get(0));
 
             String uuid = store.storeAlert(alert);
             if (null == uuid) {
-                return new ResponseEntity<>((JsonNode) null, HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
 
             Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
@@ -113,33 +118,39 @@ public class TwilioCallbackAPI {
     }
 
     @RequestMapping(path="/response", method = RequestMethod.POST, produces = "application/xml")
-    public String ackNotification(@RequestParam Map<String, String> allParams) {
+    public ResponseEntity<String> ackNotification(@RequestParam Map<String, String> allParams) {
         log.info("Receiving Twilio response for params={}", allParams);
-        if(!allParams.containsKey("Digits")) {
-            return "<Response><Say>ZMON Response Error</Say></Response>";
+        if(!allParams.containsKey("Digits") || !allParams.containsKey("notification")) {
+            return new ResponseEntity<>("<Response><Say>ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
         }
 
         String id = allParams.get("notification");
         TwilioAlert alert = store.getAlert(id);
-        String phone = allParams.get("To");
+        if (null == alert) {
+            return new ResponseEntity<>("<Response><Say>Notification not found</Say></Response>", HttpStatus.NOT_FOUND);
+        }
 
+        String phone = allParams.get("To");
         String digits = allParams.get("Digits");
+
         if("1".equals(digits)) {
             log.info("Received ACK for alert: id={} phone={}", id, phone);
             store.ackAlert(alert.getAlertId(), phone);
-            return "<Response><Say>Alert Acknowledged</Say></Response>";
+            return new ResponseEntity<>("<Response><Say>Alert Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("2".equals(digits)) {
             log.info("Received ACK for entity: id={} entity={} phone={}", id, alert.getEntityId(), phone);
             store.ackAlertEntity(alert.getAlertId(), alert.getEntityId(), phone);
-            return "<Response><Say>Alert Entity Acknowledged</Say></Response>";
+            return new ResponseEntity<>("<Response><Say>Alert Entity Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("6".equals(digits)) {
             log.info("Received RESOLVED for alert");
-            return "<Response><Say>Alert Resolved</Say></Response>";
+            store.resolveAlert(alert.getAlertId());
+            return new ResponseEntity<>("<Response><Say>Alert Resolved</Say></Response>", HttpStatus.OK);
         }
         else {
-            return "<Response><Say>ZMON Response Error</Say></Response>";
+            log.info("Wrong digit received!");
+            return new ResponseEntity<>("<Response><Say>ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
         }
     }
 }

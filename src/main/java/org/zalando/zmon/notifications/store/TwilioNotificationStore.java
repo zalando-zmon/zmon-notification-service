@@ -39,18 +39,33 @@ public class TwilioNotificationStore {
         }
     }
 
-    public String storeAlert(TwilioAlert data) {
-        String uuid = UUID.randomUUID().toString();
-
+    public boolean lockAlert(int alertId, String entityId) {
         try(Jedis jedis = pool.getResource()) {
-            jedis.set(uuid, mapper.writeValueAsString(data));
-            jedis.expire(uuid, 60*60);
+            final String lockKey = "zmon:notify:lock:" + alertId;
+            long l = jedis.setnx(lockKey, entityId);
+            if(l > 0) {
+                jedis.expire(lockKey, 120);
+                return true;
+            }
         }
         catch(Exception ex) {
 
         }
+        return false;
+    }
 
-        return uuid;
+    public String storeAlert(TwilioAlert data) {
+
+        try(Jedis jedis = pool.getResource()) {
+            String uuid = UUID.randomUUID().toString();
+            jedis.set(uuid, mapper.writeValueAsString(data));
+            jedis.expire(uuid, 60*60);
+            return uuid;
+        }
+        catch(Exception ex) {
+
+        }
+        return null;
     }
 
     public boolean ackAlert(int alertId, String user) {
