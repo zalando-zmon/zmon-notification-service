@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Call;
+import com.twilio.rest.api.v2010.account.Notification;
 import com.twilio.type.PhoneNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.store.TwilioNotificationStore;
@@ -20,6 +23,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,25 +34,24 @@ import java.util.Optional;
 @RequestMapping(path = "/api/v1/twilio")
 public class TwilioCallbackAPI {
 
-    @Autowired
-    NotificationServiceConfig config;
+    final NotificationServiceConfig config;
 
-    @Autowired
-    ObjectMapper mapper;
+    final ObjectMapper mapper;
 
-    @Autowired
-    TokenInfoService tokenInfoService;
+    final TokenInfoService tokenInfoService;
 
-    @Autowired
-    TwilioNotificationStore store;
+    final TwilioNotificationStore store;
 
     private final Logger log = LoggerFactory.getLogger(TwilioCallbackAPI.class);
 
-    @Bean
-    TwilioNotificationStore getTwilioNotificationStore() throws URISyntaxException {
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
-        return new TwilioNotificationStore(jedisPool, mapper);
+    @Autowired
+    public TwilioCallbackAPI(ObjectMapper objectMapper, TokenInfoService tokenInfoService, NotificationServiceConfig notificationServiceConfig, TwilioNotificationStore twilioNotificationStore) {
+        this.config = notificationServiceConfig;
+        this.mapper = objectMapper;
+        this.tokenInfoService = tokenInfoService;
+        this.store = twilioNotificationStore;
+
+        Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
     }
 
     // https://github.com/twilio/twilio-java
@@ -84,7 +87,6 @@ public class TwilioCallbackAPI {
                 return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
 
-            Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
             Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
 
             return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
@@ -152,6 +154,31 @@ public class TwilioCallbackAPI {
         else {
             log.info("Wrong digit received!");
             return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Scheduled(fixedRate = 15000, initialDelay = 60000)
+    public void handlePendingCalls() throws URISyntaxException {
+        List<String> results = store.getPendingNotifications();
+        if (null == results) {
+            log.error("Error occured receiving pending notifications");
+        }
+
+        log.info("Received pending notifications: count={}", results.size());
+        for (int i = 0; i < results.size(); i++) {
+            String[] data = results.get(i).split(":");
+            String number = data[0];
+            String uuid = data[1];
+
+            TwilioAlert alert = store.getAlert(uuid);
+            if (store.isAck(alert.getAlertId(), alert.getEntityId())) {
+                log.info("Alert is in state ACK: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
+                continue;
+            }
+
+            log.info("Escalation call for: notification={} phone={} alertId={}", uuid, number, alert.getAlertId());
+
+            Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(number), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
         }
     }
 }

@@ -24,6 +24,10 @@ notifications:
   google_push_service_url: https://gcm-http.googleapis.com/gcm/send
   google_push_service_api_key:
 
+  twilio_user: "XXX"
+  twilio_api_key: "YYY"
+
+
 mobile:
   data_service_url:
   read_scope:

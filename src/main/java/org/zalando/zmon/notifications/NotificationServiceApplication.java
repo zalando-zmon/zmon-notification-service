@@ -1,5 +1,6 @@
 package org.zalando.zmon.notifications;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.*;
 import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
@@ -18,6 +20,7 @@ import org.zalando.zmon.notifications.push.PushNotificationService;
 import org.zalando.zmon.notifications.store.NotificationStore;
 import org.zalando.zmon.notifications.store.PreSharedKeyStore;
 import org.zalando.zmon.notifications.store.RedisNotificationStore;
+import org.zalando.zmon.notifications.store.TwilioNotificationStore;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -28,11 +31,15 @@ import java.util.Collection;
 import java.util.Optional;
 
 @RestController
+@EnableScheduling
 @EnableConfigurationProperties
 @SpringBootApplication
 public class NotificationServiceApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(NotificationServiceApplication.class);
+
+    @Autowired
+    ObjectMapper mapper;
 
     @Autowired
     NotificationServiceConfig config;
@@ -55,12 +62,18 @@ public class NotificationServiceApplication {
     }
 
     @Bean
+    TwilioNotificationStore getTwilioNotificationStore(NotificationServiceConfig config) throws URISyntaxException {
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
+        return new TwilioNotificationStore(jedisPool, mapper);
+    }
+
+    @Bean
     PreSharedKeyStore getKeyStore(NotificationServiceConfig config) {
         return new PreSharedKeyStore(config.getSharedKeys());
     }
 
     // request payloads
-
     public static class DeviceRequestBody {
         public String registration_token;
     }

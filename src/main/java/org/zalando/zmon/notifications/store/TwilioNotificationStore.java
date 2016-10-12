@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.zalando.zmon.notifications.TwilioAlert;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Tuple;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -127,5 +129,38 @@ public class TwilioNotificationStore {
             return false;
         }
         return false;
+    }
+
+    public boolean storeEscalations(TwilioAlert alert, String id) {
+        try(Jedis jedis = pool.getResource()) {
+            long now = System.currentTimeMillis();
+            now /= 1000;
+            jedis.zadd("zmon:notify:queue", now + 2 * 60, alert.getNumbers().get(0) + ":" + id);
+
+            if(alert.getNumbers().size() > 1) {
+                for(int i = 1; i < alert.getNumbers().size(); ++i) {
+                    // add an additional 5min for every other phone number
+                    jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, alert.getNumbers().get(i) + ":" + id);
+                }
+            }
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return false;
+    }
+
+    public List<String> getPendingNotifications() {
+        long max = System.currentTimeMillis() / 1000;
+        try(Jedis jedis = pool.getResource()) {
+            // execute a fetch atomically and issue calls
+            List<String> result = (List<String>) jedis.eval("local t = redis.call('ZRANGEBYSCORE', 'zmon:notify:queue', '0', '"+max+"'); redis.call('ZREMRANGEBYSCORE', 'zmon:notify:queue', '0', '"+max+"'); return t;", 0);
+            return result;
+        }
+        catch(Exception ex) {
+
+        }
+
+        return null;
     }
 }
