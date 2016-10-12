@@ -68,12 +68,22 @@ public class TwilioCallbackAPI {
         }
 
         if (alert.getEventType().equals("ALERT_START")) {
+            log.info("Storing alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
+            String uuid = store.storeAlert(alert);
+            if (null == uuid) {
+                return new ResponseEntity<>((JsonNode) null, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
 
             boolean isAck = store.isAck(alert.getAlertId(), alert.getEntityId());
             if(isAck) {
                 log.info("Alert start received, but is already ACK: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
+
+                // no escalation stored at this point due to matching ACK
                 return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
+
+            // store escalation independent of lock, lock maybe from other entity and we wait notify period to trigger call for another entity
+            store.storeEscalations(alert, uuid);
 
             boolean lock = store.lockAlert(alert.getAlertId(), alert.getEntityId());
             if(!lock) {
@@ -81,19 +91,12 @@ public class TwilioCallbackAPI {
                 return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
             }
 
-            log.info("Storing alertId={} and triggering call to first number={}", alert.getAlertId(), alert.getNumbers().get(0));
-            String uuid = store.storeAlert(alert);
-            if (null == uuid) {
-                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
-            }
-            store.storeEscalations(alert, uuid);
-
             Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
 
             return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
         }
         else {
-            log.info("Alert ended received alertId={}", alert.getAlertId());
+            log.info("ALERT_ENDED received: alertId={}", alert.getAlertId());
             if (alert.isAlertChanged()) {
                 store.resolveAlert(alert.getAlertId());
             }
@@ -104,8 +107,12 @@ public class TwilioCallbackAPI {
 
     @RequestMapping(path="/call", method = RequestMethod.POST, produces = "application/xml")
     public String call(@RequestParam(name = "notification") String id) {
-        log.info("Start call request for alertId={}", id);
         TwilioAlert alert = store.getAlert(id);
+        if (null == alert) {
+            return "";
+        }
+
+        log.info("Start call request: notification={} alertId={} entityId={}", id, alert.getAlertId(), alert.getEntityId());
 
         String voice = alert.getVoice();
         if (null == voice || "".equals(voice)) {
@@ -122,7 +129,7 @@ public class TwilioCallbackAPI {
 
     @RequestMapping(path="/response", method = RequestMethod.POST, produces = "application/xml")
     public ResponseEntity<String> ackNotification(@RequestParam Map<String, String> allParams) {
-        log.info("Receiving Twilio response for params={}", allParams);
+        log.info("Receiving response for params={}", allParams);
         if(!allParams.containsKey("Digits") || !allParams.containsKey("notification")) {
             return new ResponseEntity<>("<Response><Say>ZMON Response Error</Say></Response>", HttpStatus.BAD_REQUEST);
         }
