@@ -184,7 +184,8 @@ public class TwilioNotificationStore {
         try {
             return mapper.readValue(data, mapper.getTypeFactory().constructType(PendingNotification.class));
         }
-        catch(Exception x) {
+        catch(Exception ex) {
+            log.error("Json mapping failed", ex);
             return null;
         }
     }
