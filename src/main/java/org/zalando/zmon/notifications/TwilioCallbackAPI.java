@@ -164,28 +164,17 @@ public class TwilioCallbackAPI {
         }
     }
 
-    @Scheduled(fixedRate = 5000, initialDelay = 60000)
-    public void handlePendingCalls() throws URISyntaxException {
-        List<PendingNotification> results = store.getPendingNotifications();
-        if (null == results) {
-            log.error("Error occured receiving pending notifications");
-        }
-
-        if (results.size() > 0) {
-            log.info("Received pending notifications: count={}", results.size());
-        }
-
+    public static Map<Integer, Map<String, List<PendingNotification>>> transformResult(List<PendingNotification> results) {
         Map<Integer, Map<String, List<PendingNotification>>> pendingNotifications = new HashMap<>();
-
         for (PendingNotification p: results) {
             Map<String, List<PendingNotification>> pendingByIncidentId = pendingNotifications.get(p.getAlertId());
             List<PendingNotification> list;
             if (pendingByIncidentId == null) {
                 pendingByIncidentId = new HashMap<>();
-                list = new ArrayList<>();
-
-                pendingByIncidentId.put(p.getIncidentId(), list);
                 pendingNotifications.put(p.getAlertId(), pendingByIncidentId);
+
+                list = new ArrayList<>();
+                pendingByIncidentId.put(p.getIncidentId(), list);
             }
             else {
                 list = pendingByIncidentId.get(p.getIncidentId());
@@ -196,6 +185,22 @@ public class TwilioCallbackAPI {
             }
             list.add(p);
         }
+        return pendingNotifications;
+    }
+
+    @Scheduled(fixedRate = 5000, initialDelay = 60000)
+    public void handlePendingCalls() throws URISyntaxException {
+        List<PendingNotification> results = store.getPendingNotifications();
+        if (null == results) {
+            log.error("Error occured receiving pending notifications");
+            return;
+        }
+
+        if (results.size() > 0) {
+            log.info("Received pending notifications: count={}", results.size());
+        }
+
+        Map<Integer, Map<String, List<PendingNotification>>> pendingNotifications = transformResult(results);
 
         if (pendingNotifications.size() > 0) {
             for(Map.Entry<Integer, Map<String, List<PendingNotification>>> byAlertId : pendingNotifications.entrySet()) {
