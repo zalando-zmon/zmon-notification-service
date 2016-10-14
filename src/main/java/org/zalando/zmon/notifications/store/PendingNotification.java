@@ -12,6 +12,10 @@ public class PendingNotification {
     String incidentId;
     String voice;
 
+    public PendingNotification() {
+
+    }
+
     public PendingNotification(int alertId, int level, String incidentId, String phone, String entityId, String message, String voice) {
         this.alertId = alertId;
         this.level = level;

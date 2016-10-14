@@ -15,6 +15,10 @@ public class TwilioAlert {
     private int alertId;
     private List<String> numbers;
 
+    public TwilioAlert() {
+
+    }
+
     public String getVoice() {
         return voice;
     }

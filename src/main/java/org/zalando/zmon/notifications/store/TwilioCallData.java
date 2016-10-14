@@ -13,6 +13,9 @@ public class TwilioCallData {
     String incidentId;
     String phone;
 
+    public TwilioCallData() {
+    }
+
     public TwilioCallData(int alertId, List<String> entities, String message, String voice, String incidentId, String phone) {
         this.alertId = alertId;
         this.entities = entities;
