@@ -4,11 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.zalando.zmon.notifications.TwilioAlert;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Tuple;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Created by jmussler on 11.10.16.
@@ -24,27 +23,64 @@ public class TwilioNotificationStore {
         this.mapper = mapper;
     }
 
-    public TwilioAlert getAlert(String uuid) {
-        if (null == uuid || "".equals(uuid)) {
-            return null;
-        }
-
+    public String getOrSetIncidentId(int alertId) {
         try(Jedis jedis = pool.getResource()) {
-            String data = jedis.get(uuid);
-            if (null == data) {
-                return null;
-            }
-            return mapper.readValue(data, TwilioAlert.class);
+            String uuid = UUID.randomUUID().toString();
+            jedis.setnx("zmon:notify:incident:" + alertId, uuid);
+            return jedis.get("zmon:notify:incident:" + alertId);
+        }
+        catch(Exception ex) {
+
+        }
+        return null;
+    }
+
+    public boolean isIncidentOngoing(int alertId, String incidentId) {
+        try(Jedis jedis = pool.getResource()) {
+            String currentId = jedis.get("zmon:notify:incident:" + alertId);
+            return currentId != null && incidentId.equals(currentId);
+        }
+        catch(Exception ex) {
+        }
+        return false;
+    }
+
+    public String getOrSetIncidentId(int alertId, String entityId) {
+        return "";
+    }
+
+    public String storeCallData(TwilioCallData data) {
+        try(Jedis jedis = pool.getResource()) {
+            String uuid = UUID.randomUUID().toString();
+            jedis.set("zmon:notify:data:"+uuid, mapper.writeValueAsString(data));
+            return uuid;
         }
         catch(Exception ex) {
             return null;
         }
     }
 
-    public boolean lockAlert(int alertId, String entityId) {
+    public TwilioCallData getCallData(String uuid) {
+        if (null == uuid || "".equals(uuid)) {
+            return null;
+        }
+
+        try(Jedis jedis = pool.getResource()) {
+            String data = jedis.get("zmon:notify:data:"+uuid);
+            if (null == data) {
+                return null;
+            }
+            return mapper.readValue(data, TwilioCallData.class);
+        }
+        catch(Exception ex) {
+            return null;
+        }
+    }
+
+    public boolean lockAlert(int alertId) {
         try(Jedis jedis = pool.getResource()) {
             final String lockKey = "zmon:notify:lock:" + alertId;
-            long l = jedis.setnx(lockKey, entityId);
+            long l = jedis.setnx(lockKey, System.currentTimeMillis()+"");
             if(l > 0) {
                 jedis.expire(lockKey, 120);
                 return true;
@@ -56,13 +92,24 @@ public class TwilioNotificationStore {
         return false;
     }
 
-    public String storeAlert(TwilioAlert data) {
-
+    public boolean ackAlert(int alertId, String incidentId, String user) {
         try(Jedis jedis = pool.getResource()) {
-            String uuid = UUID.randomUUID().toString();
-            jedis.set(uuid, mapper.writeValueAsString(data));
-            jedis.expire(uuid, 60*60);
-            return uuid;
+            final String key = "zmon:notify:ack:" + alertId + ":" + incidentId;
+            jedis.set(key, user);
+            jedis.expire(key, 60 * 60);
+        }
+        catch(Exception ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public String resolveAlert(int alertId) {
+        try(Jedis jedis = pool.getResource()) {
+            final String key = "zmon:notify:incident:" + alertId;
+            String incidentId = jedis.get(key);
+            jedis.del(key);
+            return incidentId;
         }
         catch(Exception ex) {
 
@@ -70,11 +117,11 @@ public class TwilioNotificationStore {
         return null;
     }
 
-    public boolean ackAlert(int alertId, String user) {
+    public boolean ackAlertEntity(int alertId, String entityId, String incidentId, String user) {
         try(Jedis jedis = pool.getResource()) {
-            final String key ="zmon:notify:ack:" + alertId;
+            final String key ="zmon:notify:ack:" + alertId + ":" + incidentId + ":" + entityId;
             jedis.set(key, user);
-            jedis.expire(key, 60 * 60);
+            jedis.expire(key, 120 * 60);
         }
         catch(Exception ex) {
             return false;
@@ -82,44 +129,15 @@ public class TwilioNotificationStore {
         return true;
     }
 
-    public boolean resolveAlert(int alertId) {
+    public boolean isAck(int alertId, String incidentId, String entityId) {
         try(Jedis jedis = pool.getResource()) {
-            final String key = "zmon:notify:ack:" + alertId;
-            jedis.del(key);
-
-            Set<String> keys = jedis.keys("zmon:notifiy:ack:" + alertId + ":*");
-            for(String k : keys) {
-                jedis.del(k);
-            }
-
-        }
-        catch(Exception ex) {
-            return false;
-        }
-        return true;
-    }
-
-    public boolean ackAlertEntity(int alertId, String entityId, String user) {
-        try(Jedis jedis = pool.getResource()) {
-            final String key ="zmon:notify:ack:" + alertId + ":" + entityId;
-            jedis.set(key, user);
-            jedis.expire(key, 60 * 60);
-        }
-        catch(Exception ex) {
-            return false;
-        }
-        return true;
-    }
-
-    public boolean isAck(int alertId, String entityId) {
-        try(Jedis jedis = pool.getResource()) {
-            String key ="zmon:notify:ack:" + alertId;
+            String key ="zmon:notify:ack:" + alertId + ":" + incidentId;
             String value = jedis.get(key);
             if (null != value) {
                 return true;
             }
 
-            key ="zmon:notify:ack:" + alertId + ":" + entityId;
+            key ="zmon:notify:ack:" + alertId + ":" + incidentId + ":" + entityId;
             value = jedis.get(key);
             if (null != value) {
                 return true;
@@ -131,16 +149,23 @@ public class TwilioNotificationStore {
         return false;
     }
 
-    public boolean storeEscalations(TwilioAlert alert, String id) {
+    public boolean storeEscalations(TwilioAlert alert, String incidentId) {
         try(Jedis jedis = pool.getResource()) {
             long now = System.currentTimeMillis();
             now /= 1000;
-            jedis.zadd("zmon:notify:queue", now + 2 * 60, alert.getNumbers().get(0) + ":" + id);
+
+            PendingNotification task = new PendingNotification(alert.getAlertId(), 0, incidentId, alert.getNumbers().get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+
+            jedis.zadd("zmon:notify:queue", now + 0 * 60, mapper.writeValueAsString(task));
+
+            jedis.zadd("zmon:notify:queue", now + 2 * 60, mapper.writeValueAsString(task));
 
             if(alert.getNumbers().size() > 1) {
                 for(int i = 1; i < alert.getNumbers().size(); ++i) {
+                    task = new PendingNotification(alert.getAlertId(), i, incidentId, alert.getNumbers().get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+
                     // add an additional 5min for every other phone number
-                    jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, alert.getNumbers().get(i) + ":" + id);
+                    jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, mapper.writeValueAsString(task));
                 }
             }
         }
@@ -150,12 +175,26 @@ public class TwilioNotificationStore {
         return false;
     }
 
-    public List<String> getPendingNotifications() {
+    public PendingNotification mapJson(String data) {
+        try {
+            return mapper.readValue(data, mapper.getTypeFactory().constructType(PendingNotification.class));
+        }
+        catch(Exception x) {
+            return null;
+        }
+    }
+
+    public List<PendingNotification> getPendingNotifications() {
         long max = System.currentTimeMillis() / 1000;
         try(Jedis jedis = pool.getResource()) {
             // execute a fetch atomically and issue calls
-            List<String> result = (List<String>) jedis.eval("local t = redis.call('ZRANGEBYSCORE', 'zmon:notify:queue', '0', '"+max+"'); redis.call('ZREMRANGEBYSCORE', 'zmon:notify:queue', '0', '"+max+"'); return t;", 0);
-            return result;
+            long lock = jedis.setnx("zmon:notify:lock", "true");
+            if (lock > 0) {
+                jedis.expire("zmon:notify:lock", 30); // only one call every 30, need to lock to single instance to improve aggregation
+                List<String> result = (List<String>) jedis.eval("local t = redis.call('ZRANGEBYSCORE', 'zmon:notify:queue', '0', '" + max + "'); redis.call('ZREMRANGEBYSCORE', 'zmon:notify:queue', '0', '" + max + "'); return t;", 0);
+                List<PendingNotification> l =  result.stream().map(x -> mapJson(x)).filter(x-> null != x).collect(Collectors.toList());
+                return l;
+            }
         }
         catch(Exception ex) {
 

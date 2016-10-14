@@ -4,28 +4,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twilio.Twilio;
 import com.twilio.rest.api.v2010.account.Call;
-import com.twilio.rest.api.v2010.account.Notification;
 import com.twilio.type.PhoneNumber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
+import org.zalando.zmon.notifications.store.PendingNotification;
+import org.zalando.zmon.notifications.store.TwilioCallData;
 import org.zalando.zmon.notifications.store.TwilioNotificationStore;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by jmussler on 11.10.16.
@@ -42,14 +38,20 @@ public class TwilioCallbackAPI {
 
     final TwilioNotificationStore store;
 
+    final HttpEventLogger eventLog;
+
+    final NotificationServiceMetrics metrics;
+
     private final Logger log = LoggerFactory.getLogger(TwilioCallbackAPI.class);
 
     @Autowired
-    public TwilioCallbackAPI(ObjectMapper objectMapper, TokenInfoService tokenInfoService, NotificationServiceConfig notificationServiceConfig, TwilioNotificationStore twilioNotificationStore) {
+    public TwilioCallbackAPI(ObjectMapper objectMapper, TokenInfoService tokenInfoService, NotificationServiceConfig notificationServiceConfig, TwilioNotificationStore twilioNotificationStore, HttpEventLogger eventLog, NotificationServiceMetrics metrics) {
         this.config = notificationServiceConfig;
         this.mapper = objectMapper;
         this.tokenInfoService = tokenInfoService;
         this.store = twilioNotificationStore;
+        this.eventLog = eventLog;
+        this.metrics = metrics;
 
         Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
     }
@@ -68,37 +70,17 @@ public class TwilioCallbackAPI {
         }
 
         if (alert.getEventType().equals("ALERT_START")) {
-            log.info("Storing alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
-            String uuid = store.storeAlert(alert);
-            if (null == uuid) {
-                return new ResponseEntity<>((JsonNode) null, HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-
-            boolean isAck = store.isAck(alert.getAlertId(), alert.getEntityId());
-            if(isAck) {
-                log.info("Alert start received, but is already ACK: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
-
-                // no escalation stored at this point due to matching ACK
-                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
-            }
-
-            // store escalation independent of lock, lock maybe from other entity and we wait notify period to trigger call for another entity
-            store.storeEscalations(alert, uuid);
-
-            boolean lock = store.lockAlert(alert.getAlertId(), alert.getEntityId());
-            if(!lock) {
-                log.info("Notification skipped, notification in progress: alertId={} entity={}", alert.getAlertId(), alert.getEntityId());
-                return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
-            }
-
-            Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(alert.getNumbers().get(0)), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
-
+            String incidentId = store.getOrSetIncidentId(alert.getAlertId());
+            log.info("Receving ALERT_START: alertId={} entityId={} incidentId={}", alert.getAlertId(), alert.getEntityId(), incidentId);
+            store.storeEscalations(alert, incidentId);
             return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
         }
         else {
             log.info("ALERT_ENDED received: alertId={}", alert.getAlertId());
             if (alert.isAlertChanged()) {
-                store.resolveAlert(alert.getAlertId());
+
+                String incidentId = store.resolveAlert(alert.getAlertId());
+                eventLog.log(ZMonEventType.CALL_ALERT_RESOLVED, alert.getAlertId(), incidentId);
             }
 
             return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
@@ -107,22 +89,36 @@ public class TwilioCallbackAPI {
 
     @RequestMapping(path="/call", method = RequestMethod.POST, produces = "application/xml")
     public String call(@RequestParam(name = "notification") String id) {
-        TwilioAlert alert = store.getAlert(id);
-        if (null == alert) {
+        TwilioCallData data = store.getCallData(id);
+        if (null == data) {
             return "";
         }
 
-        log.info("Start call request: notification={} alertId={} entityId={}", id, alert.getAlertId(), alert.getEntityId());
+        log.info("Call request received(phone/mailbox answered): notification={} alertId={} entityIds={}", id, data.getAlertId(), data.getEntities());
 
-        String voice = alert.getVoice();
+        String voice = data.getVoice();
         if (null == voice || "".equals(voice)) {
             voice = "woman";
         }
 
+        eventLog.log(ZMonEventType.CALL_ANSWERED, data.getAlertId(), data.getEntities(), data.getPhone());
+
+        if(data.getEntities().size()>1) {
+            return "<Response>\n" +
+                    "        <Say voice=\""+ voice +"\">ZMON "+data.getEntities().size()+" entities: " + data.getMessage() + "</Say>\n" +
+                    "        <Gather action=\"/api/v1/twilio/response?notification=" + id + "\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
+                    "          <Say voice=\"woman\">" +
+                    "               Please enter 1 for ACK" +
+                    "                 or 6 for downtime." +
+                    "             </Say>\n" +
+                    "        </Gather>\n" +
+                    "</Response>";
+        }
+
         return "<Response>\n" +
-                "        <Say voice=\""+ voice +"\">" + alert.getMessage() + "</Say>\n" +
+                "        <Say voice=\""+ voice +"\">" + data.getMessage() + "</Say>\n" +
                 "        <Gather action=\"/api/v1/twilio/response?notification=" + id + "\" method=\"POST\" numDigits=\"1\" timeout=\"10\" finishOnKey=\"#\">\n" +
-                "          <Say voice=\"woman\">Please enter 1 for ACK or 2 for Entity or 6 resolve.</Say>\n" +
+                "          <Say voice=\"woman\">Please enter 1 for ACK or 2 for Entity or 6 for downtime.</Say>\n" +
                 "        </Gather>\n" +
                 "</Response>";
     }
@@ -135,29 +131,32 @@ public class TwilioCallbackAPI {
         }
 
         String id = allParams.get("notification");
-        TwilioAlert alert = store.getAlert(id);
-        if (null == alert) {
+        TwilioCallData data = store.getCallData(id);
+        if (null == data) {
             return new ResponseEntity<>("<Response><Say>Notification not found</Say></Response>", HttpStatus.NOT_FOUND);
         }
 
         String phone = allParams.get("To");
         String digits = allParams.get("Digits");
-        String voice = alert.getVoice();
+        String voice = data.getVoice();
 
         if("1".equals(digits)) {
             log.info("Received ACK for alert: id={} phone={}", id, phone);
-            store.ackAlert(alert.getAlertId(), phone);
+            eventLog.log(ZMonEventType.CALL_ALERT_ACK_RECEIVED, data.getAlertId(), phone, data.getIncidentId());
+            store.ackAlert(data.getAlertId(), data.getIncidentId(), phone);
             return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("2".equals(digits)) {
-            log.info("Received ACK for entity: id={} entity={} phone={}", id, alert.getEntityId(), phone);
-            store.ackAlertEntity(alert.getAlertId(), alert.getEntityId(), phone);
+            log.info("Received ACK for entities: id={} entities={} phone={}", id, data.getEntities(), phone);
+            eventLog.log(ZMonEventType.CALL_ENTITY_ACK_RECEIVED, data.getAlertId(), phone, data.getEntities(), data.getIncidentId());
+            for(String entity : data.getEntities()) {
+                store.ackAlertEntity(data.getAlertId(), entity, data.getIncidentId(), phone);
+            }
             return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Entity Acknowledged</Say></Response>", HttpStatus.OK);
         }
         else if("6".equals(digits)) {
-            log.info("Received RESOLVED for alert");
-            store.resolveAlert(alert.getAlertId());
-            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Resolved</Say></Response>", HttpStatus.OK);
+            log.info("Received Downtime for alert");
+            return new ResponseEntity<>("<Response><Say voice=\""+voice+"\">Alert Downtime not implemented</Say></Response>", HttpStatus.NOT_IMPLEMENTED);
         }
         else {
             log.info("Wrong digit received!");
@@ -165,9 +164,9 @@ public class TwilioCallbackAPI {
         }
     }
 
-    @Scheduled(fixedRate = 15000, initialDelay = 60000)
+    @Scheduled(fixedRate = 5000, initialDelay = 60000)
     public void handlePendingCalls() throws URISyntaxException {
-        List<String> results = store.getPendingNotifications();
+        List<PendingNotification> results = store.getPendingNotifications();
         if (null == results) {
             log.error("Error occured receiving pending notifications");
         }
@@ -176,20 +175,74 @@ public class TwilioCallbackAPI {
             log.info("Received pending notifications: count={}", results.size());
         }
 
-        for (int i = 0; i < results.size(); i++) {
-            String[] data = results.get(i).split(":");
-            String number = data[0];
-            String uuid = data[1];
+        Map<Integer, Map<String, List<PendingNotification>>> pendingNotifications = new HashMap<>();
 
-            TwilioAlert alert = store.getAlert(uuid);
-            if (store.isAck(alert.getAlertId(), alert.getEntityId())) {
-                log.info("Alert is in state ACK skipping call: alertId={} entityId={}", alert.getAlertId(), alert.getEntityId());
-                continue;
+        for (PendingNotification p: results) {
+            Map<String, List<PendingNotification>> pendingByIncidentId = pendingNotifications.get(p.getAlertId());
+            List<PendingNotification> list;
+            if (pendingByIncidentId == null) {
+                pendingByIncidentId = new HashMap<>();
+                list = new ArrayList<>();
+
+                pendingByIncidentId.put(p.getIncidentId(), list);
+                pendingNotifications.put(p.getAlertId(), pendingByIncidentId);
             }
+            else {
+                list = pendingByIncidentId.get(p.getIncidentId());
+                if (list == null) {
+                    list = new ArrayList<>();
+                    pendingByIncidentId.put(p.getIncidentId(), list);
+                }
+            }
+            list.add(p);
+        }
 
-            log.info("Escalation call: notification={} phone={} alertId={}", uuid, number, alert.getAlertId());
+        if (pendingNotifications.size() > 0) {
+            for(Map.Entry<Integer, Map<String, List<PendingNotification>>> byAlertId : pendingNotifications.entrySet()) {
+                int alertId = byAlertId.getKey();
 
-            Call call = Call.creator(config.getTwilioUser(), new PhoneNumber(number), new PhoneNumber(config.getTwilioPhoneNumber()), new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+                for (Map.Entry<String, List<PendingNotification>> byIncidentId : byAlertId.getValue().entrySet()) {
+                    String incidentId = byIncidentId.getKey();
+
+                    if(!store.isIncidentOngoing(alertId, incidentId)) {
+                        log.info("Received old incidentId, skipping notify: alertId={} incidentId={}", alertId, incidentId);
+                        continue;
+                    }
+
+                    List<PendingNotification> filtered = new ArrayList<>();
+                    for (PendingNotification p : byIncidentId.getValue()) {
+                        if (!store.isAck(p.getAlertId(), incidentId, p.getEntityId())) {
+                            filtered.add(p);
+                        }
+                    }
+
+                    if (filtered.size() > 0) {
+                        int level = filtered.get(0).getLevel();
+                        String phone = filtered.get(0).getPhone();
+
+                        // we call lowest escalation here, we will assume there is always one higher escalation at next poll due to delay for at least one entity
+                        for (PendingNotification p : filtered) {
+                            if (p.getLevel() < level) {
+                                level = p.getLevel();
+                                phone = p.getPhone();
+                            }
+                        }
+
+                        if (store.lockAlert(alertId)) {
+                            List<String> entities = filtered.stream().map(x->x.getEntityId()).collect(Collectors.toList());
+                            log.info("Calling ... : alertId={} level={} phone={} entities={}", alertId, level, phone, entities);
+                            TwilioCallData data = new TwilioCallData(alertId, entities, filtered.get(0).getMessage(), filtered.get(0).getVoice(), incidentId, phone);
+                            String uuid = store.storeCallData(data);
+                            Call call = Call.creator(config.getTwilioUser(),
+                                    new PhoneNumber(phone),
+                                    new PhoneNumber(config.getTwilioPhoneNumber()),
+                                    new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+                        }
+                    } else {
+                        log.info("All entities are ACK, skipping call: alertId={} incidentId={}", alertId, incidentId);
+                    }
+                }
+            }
         }
     }
 }

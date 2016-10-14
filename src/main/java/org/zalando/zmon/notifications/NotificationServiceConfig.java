@@ -25,6 +25,62 @@ public class NotificationServiceConfig {
 
     public Map<String, Long> sharedKeys;
 
+    private boolean eventlogEnabled = false;
+    private String eventlogUrl = "http://localhost:8081/";
+
+    private int eventlogConnections = 50;
+    private int eventlogPoolSize = 50;
+    private int eventlogSocketTimeout = 500;
+    private int eventlogTimeout = 1000;
+
+    public boolean isEventlogEnabled() {
+        return eventlogEnabled;
+    }
+
+    public void setEventlogEnabled(boolean eventlogEnabled) {
+        this.eventlogEnabled = eventlogEnabled;
+    }
+
+    public String getEventlogUrl() {
+        return eventlogUrl;
+    }
+
+    public void setEventlogUrl(String eventlogUrl) {
+        this.eventlogUrl = eventlogUrl;
+    }
+
+    public int getEventlogConnections() {
+        return eventlogConnections;
+    }
+
+    public void setEventlogConnections(int eventlogConnections) {
+        this.eventlogConnections = eventlogConnections;
+    }
+
+    public int getEventlogPoolSize() {
+        return eventlogPoolSize;
+    }
+
+    public void setEventlogPoolSize(int eventlogPoolSize) {
+        this.eventlogPoolSize = eventlogPoolSize;
+    }
+
+    public int getEventlogSocketTimeout() {
+        return eventlogSocketTimeout;
+    }
+
+    public void setEventlogSocketTimeout(int eventlogSocketTimeout) {
+        this.eventlogSocketTimeout = eventlogSocketTimeout;
+    }
+
+    public int getEventlogTimeout() {
+        return eventlogTimeout;
+    }
+
+    public void setEventlogTimeout(int eventlogTimeout) {
+        this.eventlogTimeout = eventlogTimeout;
+    }
+
     public Map<String, Long> getSharedKeys() {
         return sharedKeys;
     }
