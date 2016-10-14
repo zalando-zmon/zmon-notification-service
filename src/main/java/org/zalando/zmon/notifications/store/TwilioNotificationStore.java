@@ -1,10 +1,13 @@
 package org.zalando.zmon.notifications.store;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zalando.zmon.notifications.TwilioAlert;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -14,8 +17,8 @@ import java.util.stream.Collectors;
  */
 public class TwilioNotificationStore {
 
+    private final Logger log = LoggerFactory.getLogger(TwilioNotificationStore.class);
     private final ObjectMapper mapper;
-
     private final JedisPool pool;
 
     public TwilioNotificationStore(JedisPool pool, ObjectMapper mapper) {
@@ -154,15 +157,16 @@ public class TwilioNotificationStore {
             long now = System.currentTimeMillis();
             now /= 1000;
 
+            // increase task level, as queue is unique set
             PendingNotification task = new PendingNotification(alert.getAlertId(), 0, incidentId, alert.getNumbers().get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
-
             jedis.zadd("zmon:notify:queue", now + 0 * 60, mapper.writeValueAsString(task));
 
+            task = new PendingNotification(alert.getAlertId(), 1, incidentId, alert.getNumbers().get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
             jedis.zadd("zmon:notify:queue", now + 2 * 60, mapper.writeValueAsString(task));
 
             if(alert.getNumbers().size() > 1) {
                 for(int i = 1; i < alert.getNumbers().size(); ++i) {
-                    task = new PendingNotification(alert.getAlertId(), i, incidentId, alert.getNumbers().get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+                    task = new PendingNotification(alert.getAlertId(), i + 1, incidentId, alert.getNumbers().get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
 
                     // add an additional 5min for every other phone number
                     jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, mapper.writeValueAsString(task));
@@ -170,6 +174,7 @@ public class TwilioNotificationStore {
             }
         }
         catch(Exception ex) {
+            log.error("Writing tasks to redis failed", ex);
             return false;
         }
         return false;
@@ -195,11 +200,13 @@ public class TwilioNotificationStore {
                 List<PendingNotification> l =  result.stream().map(x -> mapJson(x)).filter(x-> null != x).collect(Collectors.toList());
                 return l;
             }
+            else {
+                return new ArrayList<>();
+            }
         }
         catch(Exception ex) {
-
+            log.error("Fetching queue items failed", ex);
+            return null;
         }
-
-        return null;
     }
 }
