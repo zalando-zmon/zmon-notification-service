@@ -1,9 +1,12 @@
 package org.zalando.zmon.notifications;
 
 import org.junit.Test;
+import org.zalando.zmon.notifications.config.EscalationConfig;
 import org.zalando.zmon.notifications.store.PendingNotification;
+import org.zalando.zmon.notifications.store.TwilioNotificationStore;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -28,5 +31,27 @@ public class TwilioTest {
         assertEquals("", 1, groups.get(2).size());
         assertEquals("", 2, groups.get(1).get("i1").size());
         assertEquals("", 1, groups.get(1).get("i2").size());
+    }
+
+    @Test
+    public void testEscalationOne() {
+        EscalationConfig config = new EscalationConfig();
+        EscalationConfig.TeamMember luis = new EscalationConfig.TeamMember("Luis", "11111");
+        EscalationConfig.TeamMember jan = new EscalationConfig.TeamMember("Jan", "22222");
+        EscalationConfig.TeamMember henning = new EscalationConfig.TeamMember("Henning", "33333");
+        EscalationConfig.TeamMember marko = new EscalationConfig.TeamMember("Marko", "44444");
+
+        config.getMembers().add(luis);
+        config.getMembers().add(jan);
+        config.getMembers().add(henning);
+
+        config.getOnCall().add("Luis");
+        config.getOnCall().add("Jan");
+
+        config.getPolicy().add(Arrays.asList(jan, henning, luis));
+        config.getPolicy().add(Arrays.asList(marko));
+
+        List<String> toCall = TwilioNotificationStore.getNumbersFromTeam(config);
+        assertEquals(Arrays.asList("11111","22222","44444"), toCall);
     }
 }

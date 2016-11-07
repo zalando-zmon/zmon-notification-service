@@ -238,10 +238,16 @@ public class TwilioCallbackAPI {
                             log.info("Calling ... : alertId={} level={} phone={} entities={}", alertId, level, phone, entities);
                             TwilioCallData data = new TwilioCallData(alertId, entities, filtered.get(0).getMessage(), filtered.get(0).getVoice(), incidentId, phone);
                             String uuid = store.storeCallData(data);
-                            Call call = Call.creator(config.getTwilioUser(),
-                                    new PhoneNumber(phone),
-                                    new PhoneNumber(config.getTwilioPhoneNumber()),
-                                    new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+
+                            if(!config.isDryRun()) {
+                                Call call = Call.creator(config.getTwilioUser(),
+                                        new PhoneNumber(phone),
+                                        new PhoneNumber(config.getTwilioPhoneNumber()),
+                                        new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+                            }
+                            else {
+                                log.info("DRY RUN CALL: {}", "/api/v1/twilio/call?notification=" + uuid);
+                            }
                         }
                     } else {
                         log.info("All entities are ACK, skipping call: alertId={} incidentId={}", alertId, incidentId);

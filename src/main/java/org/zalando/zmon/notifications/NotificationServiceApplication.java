@@ -44,6 +44,9 @@ public class NotificationServiceApplication {
     @Autowired
     NotificationServiceConfig config;
 
+    @Autowired
+    EscalationConfigSource escalationConfigSource;
+
     @Bean
     TokenInfoService getTokenInfoService() {
         return new OAuthTokenInfoService(config.getOauthInfoServiceUrl());
@@ -65,7 +68,7 @@ public class NotificationServiceApplication {
     TwilioNotificationStore getTwilioNotificationStore(NotificationServiceConfig config) throws URISyntaxException {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
         JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
-        return new TwilioNotificationStore(jedisPool, mapper);
+        return new TwilioNotificationStore(jedisPool, escalationConfigSource, mapper);
     }
 
     @Bean

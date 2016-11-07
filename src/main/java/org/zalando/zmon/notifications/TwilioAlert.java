@@ -7,7 +7,7 @@ import java.util.List;
  */
 public class TwilioAlert {
     private String message;
-    private String responsibleTeam;
+    private String escalationTeam;
     private String entityId;
     private String voice;
     private String eventType;
@@ -35,12 +35,12 @@ public class TwilioAlert {
         this.eventType = eventType;
     }
 
-    public String getResponsibleTeam() {
-        return responsibleTeam;
+    public String getEscalationTeam() {
+        return escalationTeam;
     }
 
-    public void setResponsibleTeam(String responsibleTeam) {
-        this.responsibleTeam = responsibleTeam;
+    public void setEscalationTeam(String escalationTeam) {
+        this.escalationTeam = escalationTeam;
     }
 
     public int getAlertId() {

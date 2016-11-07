@@ -3,13 +3,13 @@ package org.zalando.zmon.notifications.store;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zalando.zmon.notifications.EscalationConfigSource;
 import org.zalando.zmon.notifications.TwilioAlert;
+import org.zalando.zmon.notifications.config.EscalationConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,10 +20,12 @@ public class TwilioNotificationStore {
     private final Logger log = LoggerFactory.getLogger(TwilioNotificationStore.class);
     private final ObjectMapper mapper;
     private final JedisPool pool;
+    private final EscalationConfigSource escalationSource;
 
-    public TwilioNotificationStore(JedisPool pool, ObjectMapper mapper) {
+    public TwilioNotificationStore(JedisPool pool, EscalationConfigSource escalationConfigSource, ObjectMapper mapper) {
         this.pool = pool;
         this.mapper = mapper;
+        this.escalationSource = escalationConfigSource;
     }
 
     public String getOrSetIncidentId(int alertId) {
@@ -152,21 +154,70 @@ public class TwilioNotificationStore {
         return false;
     }
 
+    public static List<String> getNumbersFromTeam(EscalationConfig escalation) {
+        List<String> numbers = new ArrayList<>();
+        Set<String> added = new HashSet<>();
+        for(String active : escalation.getOnCall()) {
+            List<EscalationConfig.TeamMember> members = escalation.getMembers().stream().filter(x->x.getName().equals(active)).collect(Collectors.toList());
+            if (members.size() > 0) {
+                numbers.add(members.get(0).getPhone());
+            }
+            else {
+                members = escalation.getPolicy().get(0).stream().filter(x->x.getName().equals(active)).collect(Collectors.toList());
+                if (members.size() > 0) {
+                    numbers.add(members.get(0).getPhone());
+                }
+            }
+            added.add(active);
+        }
+
+        if(escalation.getPolicy().size()>1) {
+            for (List<EscalationConfig.TeamMember> escalationList : escalation.getPolicy().subList(1, escalation.getPolicy().size())) {
+                for(EscalationConfig.TeamMember member : escalationList) {
+                    if(!added.contains(member.getName())) {
+                        if(null != member.getPhone() && !"".equals(member.getPhone())) {
+                            numbers.add(member.getPhone());
+                            added.add(member.getName());
+                        }
+                        else {
+                            List<EscalationConfig.TeamMember> members = escalation.getMembers().stream().filter(x->x.getName().equals(member.getName())).collect(Collectors.toList());
+                            if(members.size()>0) {
+                                numbers.add(members.get(0).getPhone());
+                                added.add(member.getName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return numbers;
+    }
+
     public boolean storeEscalations(TwilioAlert alert, String incidentId) {
+        EscalationConfig escalationConfig = escalationSource.getEscalationConfig(alert.getEscalationTeam());
+        List<String> numbers = null;
+        if(null != escalationConfig) {
+            numbers = getNumbersFromTeam(escalationConfig);
+        }
+        if(alert.getNumbers().size() > 0) {
+            numbers = alert.getNumbers();
+        }
+
         try(Jedis jedis = pool.getResource()) {
             long now = System.currentTimeMillis();
             now /= 1000;
 
             // increase task level, as queue is unique set
-            PendingNotification task = new PendingNotification(alert.getAlertId(), 0, incidentId, alert.getNumbers().get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+            PendingNotification task = new PendingNotification(alert.getAlertId(), 0, incidentId, numbers.get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
             jedis.zadd("zmon:notify:queue", now + 0 * 60, mapper.writeValueAsString(task));
 
-            task = new PendingNotification(alert.getAlertId(), 1, incidentId, alert.getNumbers().get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+            task = new PendingNotification(alert.getAlertId(), 1, incidentId, numbers.get(0), alert.getEntityId(), alert.getMessage(), alert.getVoice());
             jedis.zadd("zmon:notify:queue", now + 2 * 60, mapper.writeValueAsString(task));
 
             if(alert.getNumbers().size() > 1) {
-                for(int i = 1; i < alert.getNumbers().size(); ++i) {
-                    task = new PendingNotification(alert.getAlertId(), i + 1, incidentId, alert.getNumbers().get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
+                for(int i = 1; i < numbers.size(); ++i) {
+                    task = new PendingNotification(alert.getAlertId(), i + 1, incidentId, numbers.get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
 
                     // add an additional 5min for every other phone number
                     jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, mapper.writeValueAsString(task));
