@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
+import org.zalando.zmon.notifications.config.EscalationConfig;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.store.PendingNotification;
 import org.zalando.zmon.notifications.store.TwilioCallData;
@@ -42,16 +43,19 @@ public class TwilioCallbackAPI {
 
     final NotificationServiceMetrics metrics;
 
+    final EscalationConfigSource escalations;
+
     private final Logger log = LoggerFactory.getLogger(TwilioCallbackAPI.class);
 
     @Autowired
-    public TwilioCallbackAPI(ObjectMapper objectMapper, TokenInfoService tokenInfoService, NotificationServiceConfig notificationServiceConfig, TwilioNotificationStore twilioNotificationStore, HttpEventLogger eventLog, NotificationServiceMetrics metrics) {
+    public TwilioCallbackAPI(ObjectMapper objectMapper, TokenInfoService tokenInfoService, NotificationServiceConfig notificationServiceConfig, TwilioNotificationStore twilioNotificationStore, HttpEventLogger eventLog, NotificationServiceMetrics metrics, EscalationConfigSource escalations) {
         this.config = notificationServiceConfig;
         this.mapper = objectMapper;
         this.tokenInfoService = tokenInfoService;
         this.store = twilioNotificationStore;
         this.eventLog = eventLog;
         this.metrics = metrics;
+        this.escalations = escalations;
 
         log.info("Twilio mode: dryRun={}", notificationServiceConfig.isDryRun());
 
@@ -67,13 +71,13 @@ public class TwilioCallbackAPI {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
-        if (null != alert.getNumbers() && alert.getNumbers().size() <= 0) {
+        if (null != alert.getNumbers() && alert.getNumbers().size() <= 0 && (!escalations.hasTeam(alert.getEscalationTeam()))) {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.BAD_REQUEST);
         }
 
         if (alert.getEventType().equals("ALERT_START")) {
             String incidentId = store.getOrSetIncidentId(alert.getAlertId());
-            log.info("Receving ALERT_START: alertId={} entityId={} incidentId={}", alert.getAlertId(), alert.getEntityId(), incidentId);
+            log.info("ALERT_START received: alertId={} entityId={} incidentId={}", alert.getAlertId(), alert.getEntityId(), incidentId);
             store.storeEscalations(alert, incidentId);
             return new ResponseEntity<>((JsonNode) null, HttpStatus.OK);
         }

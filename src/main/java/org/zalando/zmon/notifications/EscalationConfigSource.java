@@ -17,9 +17,7 @@ import org.springframework.stereotype.Service;
 import org.zalando.zmon.notifications.config.ConfigPayload;
 import org.zalando.zmon.notifications.config.EscalationConfig;
 
-import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +57,13 @@ public class EscalationConfigSource {
     public EscalationConfig getEscalationConfig(String teamName) {
         final String id = "escalation-team-" + teamName;
         return escalations.get(id);
+    }
+
+    public boolean hasTeam(String teamId) {
+        if (null == teamId) {
+            return false;
+        }
+        return escalations.containsKey(teamId);
     }
 
     @Scheduled(fixedRate = 60000, initialDelay = 15000)
