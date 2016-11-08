@@ -65,7 +65,7 @@ public class EscalationConfigSource {
     public void refresh() {
         try {
             URI uri = new URIBuilder(serviceConfig.getControllerUrl() + "/api/v1/entities/").addParameter("query", "{\"type\":\"escalation_config\"}").build();
-            Response r = executor.execute(Request.Get(uri).addHeader("Authorization", "Bearer: " + token.get()));
+            Response r = executor.execute(Request.Get(uri).addHeader("Authorization", "Bearer " + token.get()));
             String configString = r.returnContent().asString();
             List<ConfigPayload<EscalationConfig>> escalationWrappers = mapper.readValue(configString, new TypeReference<List<ConfigPayload<EscalationConfig>>>() {});
             HashMap<String, EscalationConfig> map = new HashMap<>();
