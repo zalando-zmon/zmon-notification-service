@@ -2,6 +2,7 @@ package org.zalando.zmon.notifications;
 
 import org.junit.Test;
 import org.zalando.zmon.notifications.config.EscalationConfig;
+import org.zalando.zmon.notifications.config.TeamMember;
 import org.zalando.zmon.notifications.store.PendingNotification;
 import org.zalando.zmon.notifications.store.TwilioNotificationStore;
 
@@ -36,10 +37,10 @@ public class TwilioTest {
     @Test
     public void testEscalationOne() {
         EscalationConfig config = new EscalationConfig();
-        EscalationConfig.TeamMember luis = new EscalationConfig.TeamMember("Luis", "11111");
-        EscalationConfig.TeamMember jan = new EscalationConfig.TeamMember("Jan", "22222");
-        EscalationConfig.TeamMember henning = new EscalationConfig.TeamMember("Henning", "33333");
-        EscalationConfig.TeamMember marko = new EscalationConfig.TeamMember("Marko", "44444");
+        TeamMember luis = new TeamMember("Luis", "11111");
+        TeamMember jan = new TeamMember("Jan", "22222");
+        TeamMember henning = new TeamMember("Henning", "33333");
+        TeamMember marko = new TeamMember("Marko", "44444");
 
         config.getMembers().add(luis);
         config.getMembers().add(jan);
@@ -53,5 +54,47 @@ public class TwilioTest {
 
         List<String> toCall = TwilioNotificationStore.getNumbersFromTeam(config);
         assertEquals(Arrays.asList("11111","22222","44444"), toCall);
+    }
+
+    @Test
+    public void testEscalationNoOne() {
+        EscalationConfig config = new EscalationConfig();
+        TeamMember luis = new TeamMember("Luis", "11111");
+        TeamMember jan = new TeamMember("Jan", "");
+        TeamMember henning = new TeamMember("Henning", "33333");
+        TeamMember marko = new TeamMember("Marko", "44444");
+
+        config.getMembers().add(luis);
+        config.getMembers().add(jan);
+        config.getMembers().add(henning);
+
+        config.getOnCall().add("Luis");
+        config.getOnCall().add("Jan");
+
+        config.getPolicy().add(Arrays.asList(jan, henning, luis));
+        config.getPolicy().add(Arrays.asList(marko));
+
+        List<String> toCall = TwilioNotificationStore.getNumbersFromTeam(config);
+        assertEquals(Arrays.asList("11111", "44444"), toCall);
+    }
+
+
+    @Test
+    public void testEscalationNoOnCall() {
+        EscalationConfig config = new EscalationConfig();
+        TeamMember luis = new TeamMember("Luis", "11111");
+        TeamMember jan = new TeamMember("Jan", "22222");
+        TeamMember henning = new TeamMember("Henning", "33333");
+        TeamMember marko = new TeamMember("Marko", "44444");
+
+        config.getMembers().add(luis);
+        config.getMembers().add(jan);
+        config.getMembers().add(henning);
+
+        config.getPolicy().add(Arrays.asList(luis, jan, henning));
+        config.getPolicy().add(Arrays.asList(marko));
+
+        List<String> toCall = TwilioNotificationStore.getNumbersFromTeam(config);
+        assertEquals(Arrays.asList("11111","22222","33333","44444"), toCall);
     }
 }

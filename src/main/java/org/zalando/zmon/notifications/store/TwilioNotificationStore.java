@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.zalando.zmon.notifications.EscalationConfigSource;
 import org.zalando.zmon.notifications.TwilioAlert;
 import org.zalando.zmon.notifications.config.EscalationConfig;
+import org.zalando.zmon.notifications.config.TeamMember;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -157,37 +158,45 @@ public class TwilioNotificationStore {
     public static List<String> getNumbersFromTeam(EscalationConfig escalation) {
         List<String> numbers = new ArrayList<>();
         Set<String> added = new HashSet<>();
-        for(String active : escalation.getOnCall()) {
-            List<EscalationConfig.TeamMember> members = escalation.getMembers().stream().filter(x->x.getName().equals(active)).collect(Collectors.toList());
-            if (members.size() > 0) {
-                numbers.add(members.get(0).getPhone());
+
+        Map<String, String> phoneDict = new HashMap<>();
+        for(TeamMember member : escalation.getMembers()) {
+            if (!"".equals(member.getPhone())) {
+                phoneDict.put(member.getName(), member.getPhone());
             }
-            else {
-                members = escalation.getPolicy().get(0).stream().filter(x->x.getName().equals(active)).collect(Collectors.toList());
-                if (members.size() > 0) {
-                    numbers.add(members.get(0).getPhone());
-                }
-            }
-            added.add(active);
         }
 
-        if(escalation.getPolicy().size()>1) {
-            for (List<EscalationConfig.TeamMember> escalationList : escalation.getPolicy().subList(1, escalation.getPolicy().size())) {
-                for(EscalationConfig.TeamMember member : escalationList) {
-                    if(!added.contains(member.getName())) {
-                        if(null != member.getPhone() && !"".equals(member.getPhone())) {
-                            numbers.add(member.getPhone());
-                            added.add(member.getName());
-                        }
-                        else {
-                            List<EscalationConfig.TeamMember> members = escalation.getMembers().stream().filter(x->x.getName().equals(member.getName())).collect(Collectors.toList());
-                            if(members.size()>0) {
-                                numbers.add(members.get(0).getPhone());
-                                added.add(member.getName());
-                            }
-                        }
-                    }
+        for(List<TeamMember> members : escalation.getPolicy()) {
+            for(TeamMember member : members) {
+                if (!"".equals(member.getPhone()) && !phoneDict.containsKey(member.getName())) {
+                    phoneDict.put(member.getName(), member.getPhone());
                 }
+            }
+        }
+
+        List<TeamMember> toCall = new ArrayList<>();
+        int startIndex = 0;
+        if(escalation.getOnCall().size() > 0) {
+            for(String name : escalation.getOnCall()) {
+                toCall.add(new TeamMember(name, ""));
+            }
+            startIndex = 1;
+        }
+
+        escalation.getPolicy().get(0).stream().filter(x->escalation.getOnCall().contains(x.getName())).collect(Collectors.toList());
+        if(escalation.getPolicy().size()>startIndex) {
+            for(List<TeamMember> members : escalation.getPolicy().subList(startIndex, escalation.getPolicy().size())) {
+                for(TeamMember member : members) {
+                    toCall.add(member);
+                }
+            }
+        }
+
+        for(TeamMember member: toCall) {
+            String number = phoneDict.get(member.getName());
+            if (null != number && !added.contains(member.getName())) {
+                numbers.add(number);
+                added.add(member.getName());
             }
         }
 
