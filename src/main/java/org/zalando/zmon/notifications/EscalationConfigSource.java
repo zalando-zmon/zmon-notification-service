@@ -29,13 +29,13 @@ public class EscalationConfigSource {
 
     private final Logger log = LoggerFactory.getLogger(EscalationConfigSource.class);
 
-    NotificationServiceConfig serviceConfig;
+    private final NotificationServiceConfig serviceConfig;
 
-    Executor executor;
+    private final Executor executor;
 
-    ObjectMapper mapper;
+    private final ObjectMapper mapper;
 
-    TokenWrapper token;
+    private final TokenWrapper token;
 
     private Map<String, EscalationConfig> escalations = new HashMap<>();
 
@@ -49,6 +49,7 @@ public class EscalationConfigSource {
         log.info("Setting up escalation config source: url={}", serviceConfig.getControllerUrl());
         this.token = tokenWrapper;
         this.mapper = mapper;
+        this.serviceConfig = serviceConfig;
         executor = Executor.newInstance(getHttpClient(serviceConfig.getControllerSocketTimeout(), serviceConfig.getControllerTimeout(), serviceConfig.getControllerConnections()));
     }
 
