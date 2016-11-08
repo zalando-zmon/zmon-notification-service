@@ -7,6 +7,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.fluent.Executor;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,8 @@ import org.zalando.zmon.notifications.config.ConfigPayload;
 import org.zalando.zmon.notifications.config.EscalationConfig;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +64,8 @@ public class EscalationConfigSource {
     @Scheduled(fixedRate = 60000, initialDelay = 15000)
     public void refresh() {
         try {
-            Response r = executor.execute(Request.Get(serviceConfig.getControllerUrl() + "/api/v1/entities/?query={\"type\":\"escalation_config\"}").addHeader("Authorization", "Bearer: " + token.get()));
+            URI uri = new URIBuilder(serviceConfig.getControllerUrl() + "/api/v1/entities/").addParameter("query", "{\"type\":\"escalation_config\"}").build();
+            Response r = executor.execute(Request.Get(uri).addHeader("Authorization", "Bearer: " + token.get()));
             String configString = r.returnContent().asString();
             List<ConfigPayload<EscalationConfig>> escalationWrappers = mapper.readValue(configString, new TypeReference<List<ConfigPayload<EscalationConfig>>>() {});
             HashMap<String, EscalationConfig> map = new HashMap<>();
@@ -73,8 +77,8 @@ public class EscalationConfigSource {
             escalations = map;
             log.info("Escalation configs loaded: {}", b);
         }
-        catch(IOException ex) {
-            log.error("Failed to load escalation configs");
+        catch(Throwable ex) {
+            log.error("Failed to load escalation configs", ex);
         }
     }
 }
