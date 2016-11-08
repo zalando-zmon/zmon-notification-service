@@ -237,7 +237,7 @@ public class TwilioCallbackAPI {
 
                         if (store.lockAlert(alertId)) {
                             List<String> entities = filtered.stream().map(x->x.getEntityId()).collect(Collectors.toList());
-                            log.info("Calling ... : alertId={} level={} phone={} entities={}", alertId, level, phone, entities);
+                            log.info("Calling ... alertId={} level={} phone={} entities={}", alertId, level, phone, entities);
                             TwilioCallData data = new TwilioCallData(alertId, entities, filtered.get(0).getMessage(), filtered.get(0).getVoice(), incidentId, phone);
                             String uuid = store.storeCallData(data);
 
@@ -250,6 +250,9 @@ public class TwilioCallbackAPI {
                             else {
                                 log.info("DRY RUN CALL: {}", "/api/v1/twilio/call?notification=" + uuid);
                             }
+                        }
+                        else {
+                            log.warn("lock still in place: alertId={}", alertId);
                         }
                     } else {
                         log.info("All entities are ACK, skipping call: alertId={} incidentId={}", alertId, incidentId);

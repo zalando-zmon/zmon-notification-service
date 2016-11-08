@@ -87,7 +87,7 @@ public class TwilioNotificationStore {
             final String lockKey = "zmon:notify:lock:" + alertId;
             long l = jedis.setnx(lockKey, System.currentTimeMillis()+"");
             if(l > 0) {
-                jedis.expire(lockKey, 120);
+                jedis.expire(lockKey, 60);
                 return true;
             }
         }
@@ -203,6 +203,8 @@ public class TwilioNotificationStore {
         if(alert.getNumbers().size() > 0) {
             numbers = alert.getNumbers();
         }
+
+        log.info("storing escalation: alertId={} incident={} numbers={}", alert.getAlertId(), incidentId, numbers);
 
         try(Jedis jedis = pool.getResource()) {
             long now = System.currentTimeMillis();
