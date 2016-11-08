@@ -69,7 +69,7 @@ public class NotificationServiceConfig {
     }
 
     public void setDryRun(boolean dryRun) {
-        dryRun = dryRun;
+        this.dryRun = dryRun;
     }
 
     public boolean isEventlogEnabled() {
