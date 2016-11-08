@@ -195,7 +195,7 @@ public class TwilioNotificationStore {
     }
 
     public boolean storeEscalations(TwilioAlert alert, String incidentId) {
-        EscalationConfig escalationConfig = escalationSource.getEscalationConfig(alert.getEscalationTeam());
+        EscalationConfig escalationConfig = escalationSource.getEscalationConfig(alert.getEscalationTeam().toLowerCase());
         List<String> numbers = null;
         if(null != escalationConfig) {
             numbers = getNumbersFromTeam(escalationConfig);

@@ -46,6 +46,7 @@ public class EscalationConfigSource {
 
     @Autowired
     public EscalationConfigSource(TokenWrapper tokenWrapper, ObjectMapper mapper, NotificationServiceConfig serviceConfig) {
+        log.info("Setting up escalation config source: url={}", serviceConfig.getControllerUrl());
         this.token = tokenWrapper;
         this.mapper = mapper;
         executor = Executor.newInstance(getHttpClient(serviceConfig.getControllerSocketTimeout(), serviceConfig.getControllerTimeout(), serviceConfig.getControllerConnections()));
@@ -65,8 +66,8 @@ public class EscalationConfigSource {
             HashMap<String, EscalationConfig> map = new HashMap<>();
             StringBuilder b = new StringBuilder();
             for(ConfigPayload<EscalationConfig> e : escalationWrappers) {
-                map.put(e.getId(), e.getData());
-                b.append(e.getId()).append(" ");
+                map.put(e.getId().toLowerCase(), e.getData());
+                b.append(e.getId().toLowerCase()).append(" ");
             }
             escalations = map;
             log.info("Escalation configs loaded: {}", b);

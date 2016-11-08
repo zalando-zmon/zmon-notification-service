@@ -53,6 +53,8 @@ public class TwilioCallbackAPI {
         this.eventLog = eventLog;
         this.metrics = metrics;
 
+        log.info("Twilio mode: dryRun={}", notificationServiceConfig.isDryRun());
+
         Twilio.init(config.getTwilioUser(), config.getTwilioApiKey());
     }
 

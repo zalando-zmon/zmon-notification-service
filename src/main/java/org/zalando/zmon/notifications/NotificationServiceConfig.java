@@ -36,8 +36,8 @@ public class NotificationServiceConfig {
 
     private String controllerUrl = "http://localhost:8080/";
 
-    private int controllerConnections = 50;
-    private int controllerPoolSize = 50;
+    private int controllerConnections = 10;
+    private int controllerPoolSize = 10;
     private int controllerSocketTimeout = 500;
     private int controllerTimeout = 1000;
 
