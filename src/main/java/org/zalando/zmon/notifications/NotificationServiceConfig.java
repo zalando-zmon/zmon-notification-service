@@ -3,6 +3,7 @@ package org.zalando.zmon.notifications;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public class NotificationServiceConfig {
     private int controllerTimeout = 1000;
 
     private String oauth2AccessTokenUrl = null;
-    private List<String> oauth2Scopes = null;
+    private List<String> oauth2Scopes = Arrays.asList("uid");
     private String oauth2StaticToken = "";
 
     private boolean dryRun = true;
