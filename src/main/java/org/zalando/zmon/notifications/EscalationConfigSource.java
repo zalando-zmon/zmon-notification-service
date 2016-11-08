@@ -55,15 +55,14 @@ public class EscalationConfigSource {
     }
 
     public EscalationConfig getEscalationConfig(String teamName) {
-        final String id = "escalation-team-" + teamName;
-        return escalations.get(id);
+        return escalations.get(teamName.toLowerCase());
     }
 
     public boolean hasTeam(String teamId) {
         if (null == teamId) {
             return false;
         }
-        return escalations.containsKey(teamId);
+        return escalations.containsKey(teamId.toLowerCase());
     }
 
     @Scheduled(fixedRate = 60000, initialDelay = 15000)
@@ -76,8 +75,9 @@ public class EscalationConfigSource {
             HashMap<String, EscalationConfig> map = new HashMap<>();
             StringBuilder b = new StringBuilder();
             for(ConfigPayload<EscalationConfig> e : escalationWrappers) {
-                map.put(e.getId().toLowerCase(), e.getData());
-                b.append(e.getId().toLowerCase()).append(" ");
+                final String teamId = e.getId().replace("escalation-team-", "").toLowerCase();
+                map.put(teamId, e.getData());
+                b.append(teamId).append(" ");
             }
             escalations = map;
             log.info("Escalation configs loaded: {}", b);

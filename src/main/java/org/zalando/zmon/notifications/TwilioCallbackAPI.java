@@ -71,7 +71,7 @@ public class TwilioCallbackAPI {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.UNAUTHORIZED);
         }
 
-        if (null != alert.getNumbers() && alert.getNumbers().size() <= 0 && (!escalations.hasTeam(alert.getEscalationTeam()))) {
+        if ((null == alert.getNumbers() || alert.getNumbers().size() <= 0) && !escalations.hasTeam(alert.getEscalationTeam())) {
             return new ResponseEntity<>((JsonNode) null, HttpStatus.BAD_REQUEST);
         }
 
