@@ -231,7 +231,7 @@ public class TwilioNotificationStore {
                     task = new PendingNotification(alert.getAlertId(), i + 1, incidentId, numbers.get(i), alert.getEntityId(), alert.getMessage(), alert.getVoice());
 
                     // add an additional 5min for every other phone number
-                    jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 5 * 60, mapper.writeValueAsString(task));
+                    jedis.zadd("zmon:notify:queue", now + 2 * 60 + i * 3 * 60, mapper.writeValueAsString(task));
                 }
             }
         }

@@ -198,7 +198,7 @@ public class TwilioCallbackAPI {
     public void handlePendingCalls() throws URISyntaxException {
         List<PendingNotification> results = store.getPendingNotifications();
         if (null == results) {
-            log.error("Error occured receiving pending notifications");
+            log.error("Error occurred receiving pending notifications");
             return;
         }
 
