@@ -112,7 +112,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/users/{name}/devices", method = RequestMethod.POST)
-    public ResponseEntity<String> registerDeviceToUser(@RequestParam(name = "name") String userId, @RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> registerDeviceToUser(@PathVariable("name") String userId, @RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             if (body.registrationToken == null || "".equals(body.registrationToken)) {
@@ -129,7 +129,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/users/{name}/devices", method = RequestMethod.GET)
-    public ResponseEntity<Collection<String>> getRegisteredDevices(@RequestParam(name = "name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<Collection<String>> getRegisteredDevices(@PathVariable("name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             return new ResponseEntity<>(notificationStore.devicesForUid(userId), HttpStatus.OK);
@@ -139,7 +139,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/device/{registration_token}", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterDevice(@PathVariable(value = "registration_token") String registrationToken, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> unregisterDevice(@PathVariable("registration_token") String registrationToken, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
 
@@ -157,7 +157,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/user/{name}/teams", method = RequestMethod.POST)
-    public ResponseEntity<String> subscribeToTeam(@RequestParam(name="name")String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             notificationStore.addTeamToUid(body.team_id, userId);
@@ -169,7 +169,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/user/{name}/teams/{team}", method = RequestMethod.DELETE)
-    public ResponseEntity<String> subscribeToTeam(@RequestParam(name="name")String userId, @RequestParam(name="team") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestParam(name="team") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             notificationStore.removeTeamFromUid(team, userId);
@@ -193,7 +193,7 @@ public class NotificationServiceApplication {
     }
 
     @RequestMapping(value = "/api/v1/subscription/{alert_id}", method = RequestMethod.DELETE)
-    public ResponseEntity<String> unregisterSubscription(@PathVariable(value = "alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+    public ResponseEntity<String> unregisterSubscription(@PathVariable("alert_id") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             notificationStore.removeAlertForUid(alertId, uid.get());
