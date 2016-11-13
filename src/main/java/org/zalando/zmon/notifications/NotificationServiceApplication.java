@@ -156,6 +156,30 @@ public class NotificationServiceApplication {
         }
     }
 
+    @RequestMapping(value = "/api/v1/user/{name}/teams", method = RequestMethod.POST)
+    public ResponseEntity<String> subscribeToTeam(@RequestParam(name="name")String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            notificationStore.addTeamToUid(body.team_id, userId);
+            LOG.info("Registered team {} for uid {}.", body.team_id, userId);
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/user/{name}/teams/{team}", method = RequestMethod.DELETE)
+    public ResponseEntity<String> subscribeToTeam(@RequestParam(name="name")String userId, @RequestParam(name="team") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            notificationStore.removeTeamFromUid(team, userId);
+            LOG.info("Removed team {} for uid {}.", team, userId);
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
     @RequestMapping(value = "/api/v1/subscription", method = RequestMethod.POST)
     public ResponseEntity<String> registerSubscription(@RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
