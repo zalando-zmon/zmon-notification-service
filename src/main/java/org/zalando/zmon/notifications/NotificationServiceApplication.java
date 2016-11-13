@@ -240,7 +240,7 @@ public class NotificationServiceApplication {
             body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
         }
 
-        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, "");
+        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, body.team);
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);
         }
