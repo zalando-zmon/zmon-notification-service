@@ -1,10 +1,12 @@
-package org.zalando.zmon.notifications;
+package org.zalando.zmon.notifications.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.zalando.stups.tokens.AccessTokenConfiguration;
 import org.zalando.stups.tokens.AccessTokens;
 import org.zalando.stups.tokens.Tokens;
+import org.zalando.zmon.notifications.TokenWrapper;
+import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 
 import java.net.URI;
 

@@ -1,7 +1,6 @@
 package org.zalando.zmon.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.*;
+import org.zalando.zmon.notifications.api.DeviceRequestBody;
+import org.zalando.zmon.notifications.api.PublishRequestBody;
+import org.zalando.zmon.notifications.api.SubscriptionRequestBody;
+import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.push.GooglePushNotificationService;
@@ -76,63 +79,6 @@ public class NotificationServiceApplication {
         return new PreSharedKeyStore(config.getSharedKeys());
     }
 
-    // request payloads
-    public static class DeviceRequestBody {
-        public String registration_token;
-    }
-
-    public static class SubscriptionRequestBody {
-        public int alert_id;
-    }
-
-    // defined by google cloud messaging API
-    public static class PublishNotificationPart {
-        public String title;
-        public String body;
-        public String icon;
-
-        public PublishNotificationPart() {
-
-        }
-
-        public PublishNotificationPart(String t, String b, String i) {
-            icon = i;
-            body = b;
-            title = t;
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("title", title)
-                    .add("body", body)
-                    .add("icon", icon).toString();
-        }
-    }
-
-    public static class PublishRequestBody {
-        public int alertId;
-        public String entityId;
-        public PublishNotificationPart notification;
-
-        public PublishNotificationPart getNotification() {
-            return notification;
-        }
-
-        public void setNotification(PublishNotificationPart notification) {
-            this.notification = notification;
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("alertId", alertId)
-                    .add("notification", notification)
-                    .add("entityId", entityId)
-                    .toString();
-        }
-    }
-
     @Autowired
     TokenInfoService tokenInfoService;
 
@@ -162,6 +108,33 @@ public class NotificationServiceApplication {
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/user/{name}/devices", method = RequestMethod.POST)
+    public ResponseEntity<String> registerDeviceToUser(@RequestParam(name = "name") String userId, @RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            if (body.registration_token == null || "".equals(body.registration_token)) {
+                return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+            }
+
+            notificationStore.addDeviceForUid(body.registration_token, userId);
+            LOG.info("Registered device {} for uid {}.", body.registration_token, userId);
+
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/user/{name}/devices", method = RequestMethod.GET)
+    public ResponseEntity<Collection<String>> getRegisteredDevices(@RequestParam(name = "name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            return new ResponseEntity<>(notificationStore.devicesForUid(userId), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
     }
 
@@ -217,7 +190,6 @@ public class NotificationServiceApplication {
 
 
     // publishing new alerts
-
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
     public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
         boolean authorized = false;
@@ -239,7 +211,7 @@ public class NotificationServiceApplication {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
-        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId);
+        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, "");
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);
         }

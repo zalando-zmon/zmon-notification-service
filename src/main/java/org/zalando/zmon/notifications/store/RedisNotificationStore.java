@@ -3,10 +3,7 @@ package org.zalando.zmon.notifications.store;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RedisNotificationStore implements NotificationStore {
@@ -25,17 +22,24 @@ public class RedisNotificationStore implements NotificationStore {
     }
 
     @Override
-    public void addAlertForUid(int alertId, String uid) {
+    public void removeDeviceForUid(String deviceId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.sadd(alertsForUidKey(uid), "" + alertId);
-            jedis.sadd(notificationsForAlertKey(alertId), uid);     // this redis set contains all the users registered for a specific alert id
+            jedis.srem(devicesForUidKey(uid), deviceId); // remove device from user
         }
     }
 
     @Override
-    public void removeDeviceForUid(String deviceId, String uid) {
+    public Collection<String> devicesForUid(String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            return jedis.smembers(devicesForUidKey(uid));
+        }
+    }
+
+    @Override
+    public void addAlertForUid(int alertId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.srem(devicesForUidKey(uid), deviceId); // remove device from user
+            jedis.sadd(alertsForUidKey(uid), "" + alertId);
+            jedis.sadd(notificationsForAlertKey(alertId), uid);     // this redis set contains all the users registered for a specific alert id
         }
     }
 
@@ -56,18 +60,54 @@ public class RedisNotificationStore implements NotificationStore {
     }
 
     @Override
-    public Collection<String> devicesForAlerts(int alertId) {
+    public Collection<String> devicesForAlerts(int alertId, String team) {
         HashSet<String> deviceIds = new HashSet<>();
         try (Jedis jedis = jedisPool.getResource()) {
-            for (String uid : jedis.smembers(notificationsForAlertKey(alertId))) {
+            Set<String> teamMembers = jedis.smembers(uidsForTeamKey(team));
+            Set<String> subscribers = jedis.smembers(notificationsForAlertKey(alertId));
+
+            Set<String> recipients = new HashSet<>();
+            if (teamMembers != null && teamMembers.size() > 0) {
+                recipients.addAll(teamMembers);
+            }
+
+            if (subscribers != null && subscribers.size() > 0) {
+                recipients.addAll(subscribers);
+            }
+
+            for (String uid : teamMembers) {
                 deviceIds.addAll(jedis.smembers(devicesForUidKey(uid)));
             }
         }
         return deviceIds;
     }
 
-    // helpers
+    @Override
+    public void addTeamToUid(String team, String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            jedis.sadd(teamsForUidKey(uid), team);
+            jedis.sadd(uidsForTeamKey(team), uid);
+        }
+    }
 
+    @Override
+    public void removeTeamFromUid(String team, String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            jedis.srem(teamsForUidKey(uid), team);
+            jedis.srem(uidsForTeamKey(team), uid);
+        }
+    }
+
+    @Override
+    public Collection<String> teamsForUid(String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            Set<String> set =jedis.smembers(teamsForUidKey(uid));
+            return set;
+        }
+    }
+
+
+    // helpers
 
     // build redis key for sets containing all devices for a given uid
     private String devicesForUidKey(String uid) {
@@ -76,6 +116,14 @@ public class RedisNotificationStore implements NotificationStore {
 
     private String alertsForUidKey(String uid) {
         return "zmon:push:alerts-for-uid:" + uid;
+    }
+
+    private String teamsForUidKey(String uid) {
+        return "zmon:push:teams-for-uid:" + uid;
+    }
+
+    private String uidsForTeamKey(String team) {
+        return "zmon:push:uids-for-team:" + team;
     }
 
     // build redis key for sets containing all devices subscribed to given alertId

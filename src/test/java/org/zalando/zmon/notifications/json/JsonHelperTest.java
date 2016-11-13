@@ -3,10 +3,8 @@ package org.zalando.zmon.notifications.json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.entity.StringEntity;
 import org.junit.Test;
-import org.zalando.zmon.notifications.NotificationServiceApplication;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import org.zalando.zmon.notifications.api.PublishNotificationPart;
+import org.zalando.zmon.notifications.api.PublishRequestBody;
 
 import static org.junit.Assert.assertEquals;
 
@@ -17,13 +15,13 @@ public class JsonHelperTest {
 
     @Test
     public void jsonEntityForNotification() throws Exception {
-        NotificationServiceApplication.PublishRequestBody publishRequestBody = new NotificationServiceApplication.PublishRequestBody();
+        PublishRequestBody publishRequestBody = new PublishRequestBody();
 
         ObjectMapper objectMapper = new ObjectMapper();
 
         publishRequestBody.alertId = 42;
         publishRequestBody.entityId = "customer4.db.zalando";
-        publishRequestBody.notification = new NotificationServiceApplication.PublishNotificationPart("No database connection to master","Connection refused", "");
+        publishRequestBody.notification = new PublishNotificationPart("No database connection to master","Connection refused", "");
         StringEntity stringEntity = JsonHelper.jsonEntityFor("device-id-1", publishRequestBody);
         /*
         assertEquals(

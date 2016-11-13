@@ -38,7 +38,27 @@ public class InMemoryNotificationStore implements NotificationStore {
     }
 
     @Override
-    public Collection<String> devicesForAlerts(int alertId) {
+    public Collection<String> devicesForUid(String uid) {
+        return null;
+    }
+
+    @Override
+    public void addTeamToUid(String team, String uid) {
+
+    }
+
+    @Override
+    public void removeTeamFromUid(String team, String uid) {
+
+    }
+
+    @Override
+    public Collection<String> teamsForUid(String uid) {
+        return null;
+    }
+
+    @Override
+    public Collection<String> devicesForAlerts(int alertId, String team) {
         ArrayList<String> result = new ArrayList<>();
         for (String uid : alerts.get(alertId)) {
             result.addAll(devices.get(uid));

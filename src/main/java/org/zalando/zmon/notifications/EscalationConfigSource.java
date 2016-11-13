@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.zalando.zmon.notifications.config.ConfigPayload;
 import org.zalando.zmon.notifications.config.EscalationConfig;
+import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 
 import java.net.URI;
 import java.util.HashMap;

@@ -6,7 +6,7 @@ import org.apache.http.client.fluent.Request;
 import org.apache.http.client.fluent.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zalando.zmon.notifications.NotificationServiceApplication;
+import org.zalando.zmon.notifications.api.PublishRequestBody;
 
 import java.io.IOException;
 
@@ -29,7 +29,7 @@ public class GooglePushNotificationService implements PushNotificationService {
     }
 
     @Override
-    public void push(NotificationServiceApplication.PublishRequestBody notification, String deviceToken) throws IOException {
+    public void push(PublishRequestBody notification, String deviceToken) throws IOException {
         Response response = executor.execute(
                 Request.Post(serviceUrl).
                         addHeader("Authorization", "Key=" + googleApiKey).

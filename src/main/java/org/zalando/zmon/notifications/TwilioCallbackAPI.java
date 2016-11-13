@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-import org.zalando.zmon.notifications.config.EscalationConfig;
+import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.store.PendingNotification;
 import org.zalando.zmon.notifications.store.TwilioCallData;
