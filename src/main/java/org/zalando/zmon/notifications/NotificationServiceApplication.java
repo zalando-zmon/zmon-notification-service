@@ -98,12 +98,12 @@ public class NotificationServiceApplication {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
 
-            if (body.registration_token == null || "".equals(body.registration_token)) {
+            if (body.registrationToken == null || "".equals(body.registrationToken)) {
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
-            notificationStore.addDeviceForUid(body.registration_token, uid.get());
-            LOG.info("Registered device {} for uid {}.", body.registration_token, uid.get());
+            notificationStore.addDeviceForUid(body.registrationToken, uid.get());
+            LOG.info("Registered device {} for uid {}.", body.registrationToken, uid.get());
 
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
@@ -115,12 +115,12 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> registerDeviceToUser(@RequestParam(name = "name") String userId, @RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            if (body.registration_token == null || "".equals(body.registration_token)) {
+            if (body.registrationToken == null || "".equals(body.registrationToken)) {
                 return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
             }
 
-            notificationStore.addDeviceForUid(body.registration_token, userId);
-            LOG.info("Registered device {} for uid {}.", body.registration_token, userId);
+            notificationStore.addDeviceForUid(body.registrationToken, userId);
+            LOG.info("Registered device {} for uid {}.", body.registrationToken, userId);
 
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
