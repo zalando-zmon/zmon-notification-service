@@ -111,7 +111,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/devices", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/v1/users/{name}/devices", method = RequestMethod.POST)
     public ResponseEntity<String> registerDeviceToUser(@RequestParam(name = "name") String userId, @RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
@@ -128,7 +128,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/devices", method = RequestMethod.GET)
+    @RequestMapping(value = "/api/v1/users/{name}/devices", method = RequestMethod.GET)
     public ResponseEntity<Collection<String>> getRegisteredDevices(@RequestParam(name = "name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
