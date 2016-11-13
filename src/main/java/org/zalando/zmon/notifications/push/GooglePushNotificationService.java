@@ -30,6 +30,7 @@ public class GooglePushNotificationService implements PushNotificationService {
 
     @Override
     public void push(PublishRequestBody notification, String deviceToken) throws IOException {
+
         Response response = executor.execute(
                 Request.Post(serviceUrl).
                         addHeader("Authorization", "Key=" + googleApiKey).

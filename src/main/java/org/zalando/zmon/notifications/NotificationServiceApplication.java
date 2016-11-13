@@ -235,6 +235,11 @@ public class NotificationServiceApplication {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
+        // prepend domain to click action
+        if (null == body.notification.click_action || !body.notification.click_action.startsWith("https://")) {
+            body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
+        }
+
         Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, "");
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);

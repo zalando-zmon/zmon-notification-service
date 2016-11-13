@@ -21,7 +21,7 @@ public class JsonHelperTest {
 
         publishRequestBody.alertId = 42;
         publishRequestBody.entityId = "customer4.db.zalando";
-        publishRequestBody.notification = new PublishNotificationPart("No database connection to master","Connection refused", "");
+        publishRequestBody.notification = new PublishNotificationPart("No database connection to master","Connection refused", "", "");
         StringEntity stringEntity = JsonHelper.jsonEntityFor("device-id-1", publishRequestBody);
         /*
         assertEquals(

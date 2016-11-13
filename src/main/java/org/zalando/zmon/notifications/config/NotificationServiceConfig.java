@@ -20,10 +20,12 @@ public class NotificationServiceConfig {
 
     private String redisUri;
 
-    private String twilioApiKey;
-    private String twilioUser;
-    private String twilioPhoneNumber;
-    private String domain;
+    private String twilioApiKey = "";
+    private String twilioUser = "";
+    private String twilioPhoneNumber = "";
+
+    // point to notification service, must be accessible from public
+    private String twilioCallbackDomain = "";
 
     public Map<String, Long> sharedKeys;
 
@@ -37,6 +39,8 @@ public class NotificationServiceConfig {
 
     private String controllerUrl = "http://localhost:8080/";
 
+    private String zmonUrl = "https://localhost:8444";
+
     private int controllerConnections = 10;
     private int controllerPoolSize = 10;
     private int controllerSocketTimeout = 500;
@@ -47,6 +51,14 @@ public class NotificationServiceConfig {
     private String oauth2StaticToken = "";
 
     private boolean dryRun = true;
+
+    public String getZmonUrl() {
+        return zmonUrl;
+    }
+
+    public void setZmonUrl(String zmonUrl) {
+        this.zmonUrl = zmonUrl;
+    }
 
     public String getGoogleUrl() {
         return googleUrl;
@@ -179,12 +191,12 @@ public class NotificationServiceConfig {
         this.twilioUser = twilioUser;
     }
 
-    public String getDomain() {
-        return domain;
+    public String getTwilioCallbackDomain() {
+        return twilioCallbackDomain;
     }
 
-    public void setDomain(String domain) {
-        this.domain = domain;
+    public void setTwilioCallbackDomain(String twilioCallbackDomain) {
+        this.twilioCallbackDomain = twilioCallbackDomain;
     }
 
     public String getTwilioPhoneNumber() {

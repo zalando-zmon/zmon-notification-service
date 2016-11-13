@@ -249,7 +249,7 @@ public class TwilioCallbackAPI {
                                 Call call = Call.creator(config.getTwilioUser(),
                                         new PhoneNumber(phone),
                                         new PhoneNumber(config.getTwilioPhoneNumber()),
-                                        new URI(config.getDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
+                                        new URI(config.getTwilioCallbackDomain() + "/api/v1/twilio/call?notification=" + uuid)).create();
                             }
                             else {
                                 log.info("DRY RUN CALL: {}", "/api/v1/twilio/call?notification=" + uuid);
