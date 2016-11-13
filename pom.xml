@@ -90,7 +90,7 @@
 		<dependency>
 			<groupId>org.zalando.stups</groupId>
 			<artifactId>tokens</artifactId>
-			<version>0.9.8</version>
+			<version>0.9.9</version>
 		</dependency>
 	</dependencies>
 
