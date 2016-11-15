@@ -20,6 +20,7 @@ public class JsonHelper {
         request.put("to", deviceToken);
         request.put("content_available", true);
         request.put("priority", "high");
+        request.put("time_to_live", 60); // TODO personal setting?
 
         ObjectNode data = request.putObject("data");
         data.put("alert_id", notification.alertId);
