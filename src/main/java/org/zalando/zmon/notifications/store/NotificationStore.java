@@ -22,4 +22,6 @@ public interface NotificationStore {
     Collection<String> teamsForUid(String uid);
 
     Collection<String> devicesForAlerts(int alertId, String team);
+
+    Collection<String> getAllDeviceIds();
 }

@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 public class InMemoryNotificationStore implements NotificationStore {
@@ -64,6 +65,11 @@ public class InMemoryNotificationStore implements NotificationStore {
             result.addAll(devices.get(uid));
         }
         return result;
+    }
+
+    @Override
+    public Collection<String> getAllDeviceIds() {
+        return null;
     }
 
     @Override

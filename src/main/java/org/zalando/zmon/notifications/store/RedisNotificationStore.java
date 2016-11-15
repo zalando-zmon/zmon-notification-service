@@ -1,37 +1,61 @@
 package org.zalando.zmon.notifications.store;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class RedisNotificationStore implements NotificationStore {
 
     private final JedisPool jedisPool;
+    private final Logger log = LoggerFactory.getLogger(RedisNotificationStore.class);
+    private final ObjectMapper mapper;
 
-    public RedisNotificationStore(JedisPool jedisPool) {
+    public RedisNotificationStore(JedisPool jedisPool, ObjectMapper mapper) {
         this.jedisPool = jedisPool;
+        this.mapper = mapper;
     }
 
+    public static class DeviceData {
+        public long lastRegistered;
+
+        public DeviceData() {}
+
+        public DeviceData(long lastRegistered)  {
+            this.lastRegistered = lastRegistered;
+        }
+    }
+
+    // store map of deviceids to user with last seen, we can filter and cleanup later
     @Override
     public void addDeviceForUid(String deviceId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.sadd(devicesForUidKey(uid), deviceId);     // this redis set contains all the devices registered for a specific oauth uid
+            String deviceData = mapper.writeValueAsString(new DeviceData(System.currentTimeMillis()));
+            jedis.hset(devicesForUidKey(uid), deviceId, deviceData);
+            jedis.hset(globalDeviceIdsKey(), deviceId, deviceData);
+        }
+        catch(IOException ex) {
+            log.error("Registration failed", ex);
         }
     }
 
     @Override
     public void removeDeviceForUid(String deviceId, String uid) {
         try (Jedis jedis = jedisPool.getResource()) {
-            jedis.srem(devicesForUidKey(uid), deviceId); // remove device from user
+            jedis.hdel(globalDeviceIdsKey(), deviceId);
+            jedis.hdel(devicesForUidKey(uid), deviceId); // remove device from user
         }
     }
 
     @Override
     public Collection<String> devicesForUid(String uid) {
         try(Jedis jedis = jedisPool.getResource()) {
-            return jedis.smembers(devicesForUidKey(uid));
+            return jedis.hkeys(devicesForUidKey(uid));
         }
     }
 
@@ -106,6 +130,12 @@ public class RedisNotificationStore implements NotificationStore {
         }
     }
 
+    @Override
+    public Collection<String> getAllDeviceIds() {
+        try(Jedis jedis = jedisPool.getResource()) {
+            return jedis.hkeys(globalDeviceIdsKey());
+        }
+    }
 
     // helpers
 
@@ -125,6 +155,8 @@ public class RedisNotificationStore implements NotificationStore {
     private String uidsForTeamKey(String team) {
         return "zmon:push:uids-for-team:" + team;
     }
+
+    private String globalDeviceIdsKey() { return "zmon:push:global-devices"; }
 
     // build redis key for sets containing all devices subscribed to given alertId
     private String notificationsForAlertKey(int alertId) {
