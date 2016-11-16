@@ -59,7 +59,7 @@ public class InMemoryNotificationStore implements NotificationStore {
     }
 
     @Override
-    public Collection<String> devicesForAlerts(int alertId, String team) {
+    public Collection<String> devicesForAlerts(int alertId, String team, int priority) {
         ArrayList<String> result = new ArrayList<>();
         for (String uid : alerts.get(alertId)) {
             result.addAll(devices.get(uid));
@@ -75,5 +75,15 @@ public class InMemoryNotificationStore implements NotificationStore {
     @Override
     public String toString() {
         return String.format("in-mem-store: devices=%s alerts=%s", devices, alerts);
+    }
+
+    @Override
+    public int getPriority(String uid) {
+        return 0;
+    }
+
+    @Override
+    public void setPriority(int priority, String uid) {
+
     }
 }

@@ -84,7 +84,7 @@ public class RedisNotificationStore implements NotificationStore {
     }
 
     @Override
-    public Collection<String> devicesForAlerts(int alertId, String team) {
+    public Collection<String> devicesForAlerts(int alertId, String team, int priority) {
         HashSet<String> deviceIds = new HashSet<>();
         try (Jedis jedis = jedisPool.getResource()) {
             Set<String> teamMembers = jedis.smembers(uidsForTeamKey(team));
@@ -99,7 +99,15 @@ public class RedisNotificationStore implements NotificationStore {
                 recipients.addAll(subscribers);
             }
 
-            for (String uid : teamMembers) {
+            List<String> filtered = new ArrayList<>();
+            for(String uid : recipients) {
+                int p = getPriority(uid);
+                if (priority >= p) {
+                    filtered.add(uid);
+                }
+            }
+
+            for (String uid : filtered) {
                 deviceIds.addAll(jedis.hkeys(devicesForUidKey(uid)));
             }
         }
@@ -137,6 +145,27 @@ public class RedisNotificationStore implements NotificationStore {
         }
     }
 
+    @Override
+    public int getPriority(String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            String p = jedis.get(priorityForUidKey(uid));
+            if (null == p || "".equals(p)) {
+                return 2;
+            }
+            return Integer.parseInt(jedis.get(priorityForUidKey(uid)));
+        }
+        catch(Exception e) {
+            return 2;
+        }
+    }
+
+    @Override
+    public void setPriority(int priority, String uid) {
+        try(Jedis jedis = jedisPool.getResource()) {
+            jedis.set(priorityForUidKey(uid), "" + priority);
+        }
+    }
+
     // helpers
 
     // build redis key for sets containing all devices for a given uid
@@ -157,6 +186,10 @@ public class RedisNotificationStore implements NotificationStore {
     }
 
     private String globalDeviceIdsKey() { return "zmon:push:global-devices"; }
+
+    private String priorityForUidKey(String uid) {
+        return "zmon:push:priority:"+uid;
+    }
 
     // build redis key for sets containing all devices subscribed to given alertId
     private String notificationsForAlertKey(int alertId) {

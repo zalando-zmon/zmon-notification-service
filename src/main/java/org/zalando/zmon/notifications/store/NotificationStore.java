@@ -21,7 +21,11 @@ public interface NotificationStore {
 
     Collection<String> teamsForUid(String uid);
 
-    Collection<String> devicesForAlerts(int alertId, String team);
+    Collection<String> devicesForAlerts(int alertId, String team, int priority);
 
     Collection<String> getAllDeviceIds();
+
+    void setPriority(int priority, String uid);
+
+    int getPriority(String uid);
 }

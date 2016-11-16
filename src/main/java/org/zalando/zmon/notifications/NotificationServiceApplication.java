@@ -12,10 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.*;
-import org.zalando.zmon.notifications.api.DeviceRequestBody;
-import org.zalando.zmon.notifications.api.PublishNotificationPart;
-import org.zalando.zmon.notifications.api.PublishRequestBody;
-import org.zalando.zmon.notifications.api.SubscriptionRequestBody;
+import org.zalando.zmon.notifications.api.*;
 import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
@@ -178,6 +175,29 @@ public class NotificationServiceApplication {
         }
     }
 
+    @RequestMapping(value = "/api/v1/users/{name}/priority", method = RequestMethod.GET)
+    public ResponseEntity<Integer> getPriority(@PathVariable("name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            int priority = notificationStore.getPriority(userId);
+            return new ResponseEntity<>(priority, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/users/{name}/priority", method = RequestMethod.POST)
+    public ResponseEntity<String> setPriority(@PathVariable("name") String userId, @RequestBody PriorityBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            notificationStore.setPriority(body.priority, userId);
+            LOG.info("Registered team {} for uid {}.", body.priority, userId);
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
     @RequestMapping(value = "/api/v1/users/{name}/alerts", method = RequestMethod.POST)
     public ResponseEntity<String> subscribeToAlert(@PathVariable("name") String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
@@ -274,7 +294,7 @@ public class NotificationServiceApplication {
             body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
         }
 
-        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, body.team);
+        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, body.team, body.priority);
         for (String deviceId : deviceIds) {
             pushNotificationService.push(body, deviceId);
         }

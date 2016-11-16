@@ -10,6 +10,7 @@ public class PublishRequestBody {
     public String entityId;
     public String team;
     public String responsibleTeam;
+    public int priority;
     public PublishNotificationPart notification;
 
     public PublishNotificationPart getNotification() {
