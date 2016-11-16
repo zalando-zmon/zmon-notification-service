@@ -100,7 +100,7 @@ public class RedisNotificationStore implements NotificationStore {
             }
 
             for (String uid : teamMembers) {
-                deviceIds.addAll(jedis.smembers(devicesForUidKey(uid)));
+                deviceIds.addAll(jedis.hkeys(devicesForUidKey(uid)));
             }
         }
         return deviceIds;
