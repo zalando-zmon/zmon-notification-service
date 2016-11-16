@@ -157,7 +157,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/teams", method = RequestMethod.GET)
+    @RequestMapping(value = "/api/v1/users/{name}/teams", method = RequestMethod.GET)
     public ResponseEntity<Collection<String>> getSubscribedTeams(@PathVariable("name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
@@ -168,7 +168,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/teams", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/v1/users/{name}/teams", method = RequestMethod.POST)
     public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
@@ -180,7 +180,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/alerts", method = RequestMethod.POST)
+    @RequestMapping(value = "/api/v1/users/{name}/alerts", method = RequestMethod.POST)
     public ResponseEntity<String> subscribeToAlert(@PathVariable("name") String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
@@ -192,7 +192,7 @@ public class NotificationServiceApplication {
         }
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/alerts", method = RequestMethod.GET)
+    @RequestMapping(value = "/api/v1/users/{name}/alerts", method = RequestMethod.GET)
     public ResponseEntity<Collection<Integer>> getSubscribedAlerts(@PathVariable("name") String userId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
@@ -201,7 +201,7 @@ public class NotificationServiceApplication {
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
-    @RequestMapping(value = "/api/v1/user/{name}/teams/{team}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/api/v1/users/{name}/teams/{team}", method = RequestMethod.DELETE)
     public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestParam(name="team") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
