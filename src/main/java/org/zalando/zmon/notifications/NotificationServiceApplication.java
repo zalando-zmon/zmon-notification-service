@@ -219,12 +219,24 @@ public class NotificationServiceApplication {
         return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
     }
 
-    @RequestMapping(value = "/api/v1/users/{name}/teams/{team}", method = RequestMethod.DELETE)
+    @RequestMapping(value = "/api/v1/users/{name}/teams", method = RequestMethod.DELETE)
     public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestParam(name="team") String team, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
             notificationStore.removeTeamFromUid(team, userId);
             LOG.info("Removed team {} for uid {}.", team, userId);
+            return new ResponseEntity<>("", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @RequestMapping(value = "/api/v1/users/{name}/alerts", method = RequestMethod.DELETE)
+    public ResponseEntity<String> removetAlertSubscription(@PathVariable("name") String userId, @RequestParam(name="alertId") int alertId, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
+        Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
+        if (uid.isPresent()) {
+            notificationStore.removeAlertForUid(alertId, userId);
+            LOG.info("Removed alert {} for uid {}.", alertId, userId);
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
