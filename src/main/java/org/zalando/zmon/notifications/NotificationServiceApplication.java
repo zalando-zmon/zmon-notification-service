@@ -102,7 +102,7 @@ public class NotificationServiceApplication {
             }
 
             notificationStore.addDeviceForUid(body.registrationToken, uid.get());
-            LOG.info("Registered device {} for uid {}.", body.registrationToken, uid.get());
+            LOG.info("Registered device {} for uid {}.", body.registrationToken.substring(0, 5), uid.get());
 
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
@@ -119,7 +119,7 @@ public class NotificationServiceApplication {
             }
 
             notificationStore.addDeviceForUid(body.registrationToken, userId);
-            LOG.info("Registered device {} for uid {}.", body.registrationToken, userId);
+            LOG.info("Registered device {} for uid {}.", body.registrationToken.substring(0, 5), userId);
 
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
@@ -148,7 +148,7 @@ public class NotificationServiceApplication {
 
             notificationStore.removeDeviceForUid(registrationToken, uid.get());
 
-            LOG.info("Removed device {} for uid {}.", registrationToken, uid.get());
+            LOG.info("Removed device {} for uid {}.", registrationToken.substring(0, 5), uid.get());
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
@@ -267,7 +267,10 @@ public class NotificationServiceApplication {
         }
 
         // prepend domain to click action
-        if (null == body.notification.click_action || !body.notification.click_action.startsWith("https://")) {
+        if (null == body.notification.click_action) {
+            body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
+        }
+        else if(!body.notification.click_action.startsWith("https://")) {
             body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
         }
 
@@ -277,7 +280,7 @@ public class NotificationServiceApplication {
         }
 
         if (deviceIds.size() > 0) {
-            LOG.info("Sent alert {} to devices {}.", body.alertId, deviceIds);
+            LOG.info("Sent alert {} to {} devices.", body.alertId, deviceIds.size());
         }
 
         return new ResponseEntity<>("", HttpStatus.OK);
