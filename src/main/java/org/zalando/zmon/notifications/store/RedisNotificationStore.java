@@ -85,29 +85,26 @@ public class RedisNotificationStore implements NotificationStore {
 
     @Override
     public Collection<String> devicesForAlerts(int alertId, String team, int priority) {
+        log.info("looking up devices for: alertId={} team={} priority={}");
         HashSet<String> deviceIds = new HashSet<>();
         try (Jedis jedis = jedisPool.getResource()) {
             Set<String> teamMembers = jedis.smembers(uidsForTeamKey(team));
-            Set<String> subscribers = jedis.smembers(notificationsForAlertKey(alertId));
-
             Set<String> recipients = new HashSet<>();
             if (teamMembers != null && teamMembers.size() > 0) {
-                recipients.addAll(teamMembers);
+                for(String member : teamMembers) {
+                    int p = getPriority(member);
+                    if (priority <= p) {
+                        recipients.add(member);
+                    }
+                }
             }
 
+            Set<String> subscribers = jedis.smembers(notificationsForAlertKey(alertId));
             if (subscribers != null && subscribers.size() > 0) {
                 recipients.addAll(subscribers);
             }
 
-            List<String> filtered = new ArrayList<>();
-            for(String uid : recipients) {
-                int p = getPriority(uid);
-                if (priority <= p) {
-                    filtered.add(uid);
-                }
-            }
-
-            for (String uid : filtered) {
+            for (String uid : recipients) {
                 deviceIds.addAll(jedis.hkeys(devicesForUidKey(uid)));
             }
         }
@@ -152,9 +149,10 @@ public class RedisNotificationStore implements NotificationStore {
             if (null == p || "".equals(p)) {
                 return 2;
             }
-            return Integer.parseInt(jedis.get(priorityForUidKey(uid)));
+            return Integer.parseInt(p);
         }
         catch(Exception e) {
+            log.error("Failed to parse integer", e);
             return 2;
         }
     }
