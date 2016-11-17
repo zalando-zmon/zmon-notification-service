@@ -102,7 +102,7 @@ public class RedisNotificationStore implements NotificationStore {
             List<String> filtered = new ArrayList<>();
             for(String uid : recipients) {
                 int p = getPriority(uid);
-                if (priority >= p) {
+                if (priority <= p) {
                     filtered.add(uid);
                 }
             }
