@@ -14,7 +14,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.bind.annotation.*;
 import org.zalando.zmon.notifications.api.*;
 import org.zalando.zmon.notifications.config.NotificationServiceConfig;
+import org.zalando.zmon.notifications.oauth.ChainedTokenInfo;
 import org.zalando.zmon.notifications.oauth.OAuthTokenInfoService;
+import org.zalando.zmon.notifications.oauth.PreSharedTokenInfoService;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
 import org.zalando.zmon.notifications.push.GooglePushNotificationService;
 import org.zalando.zmon.notifications.push.PushNotificationService;
@@ -49,8 +51,10 @@ public class NotificationServiceApplication {
     EscalationConfigSource escalationConfigSource;
 
     @Bean
-    TokenInfoService getTokenInfoService() {
-        return new OAuthTokenInfoService(config.getOauthInfoServiceUrl());
+    TokenInfoService getTokenInfoService(NotificationServiceConfig config, PreSharedKeyStore preSharedKeyStore) {
+        ChainedTokenInfo info = new ChainedTokenInfo(new PreSharedTokenInfoService(preSharedKeyStore),
+                                                     new OAuthTokenInfoService(config.getOauthInfoServiceUrl()));
+        return info;
     }
 
     @Bean
@@ -279,22 +283,7 @@ public class NotificationServiceApplication {
     // publishing new alerts
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
     public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
-        boolean authorized = false;
-
-        if (null == oauthHeader) {
-            // header not set
-        } else if (oauthHeader.startsWith("Bearer")) {
-            Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
-            if (uid.isPresent()) {
-                authorized = true;
-            }
-        } else if (oauthHeader.startsWith("PreShared")) {
-            if (keyStore.isKeyValid(oauthHeader.replace("PreShared ", ""))) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
+        if (!tokenInfoService.lookupUid(oauthHeader).isPresent()) {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
@@ -320,22 +309,7 @@ public class NotificationServiceApplication {
 
     @RequestMapping(value = "/api/v1/publish-global", method = RequestMethod.POST)
     public ResponseEntity<String> publishGlobalNotification(@RequestBody PublishNotificationPart body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
-        boolean authorized = false;
-
-        if (null == oauthHeader) {
-            // header not set
-        } else if (oauthHeader.startsWith("Bearer")) {
-            Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
-            if (uid.isPresent()) {
-                authorized = true;
-            }
-        } else if (oauthHeader.startsWith("PreShared")) {
-            if (keyStore.isKeyValid(oauthHeader.replace("PreShared ", ""))) {
-                authorized = true;
-            }
-        }
-
-        if (!authorized) {
+        if (!tokenInfoService.lookupUid(oauthHeader).isPresent()) {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
