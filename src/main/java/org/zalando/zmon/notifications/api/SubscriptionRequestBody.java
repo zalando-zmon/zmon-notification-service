@@ -5,5 +5,5 @@ package org.zalando.zmon.notifications.api;
  */
 public class SubscriptionRequestBody {
     public int alert_id = 0;
-    public String team_id = null;
+    public String team = null;
 }

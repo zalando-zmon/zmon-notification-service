@@ -167,8 +167,8 @@ public class NotificationServiceApplication {
     public ResponseEntity<String> subscribeToTeam(@PathVariable("name") String userId, @RequestBody SubscriptionRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
         if (uid.isPresent()) {
-            notificationStore.addTeamToUid(body.team_id, userId);
-            LOG.info("Registered team {} for uid {}.", body.team_id, userId);
+            notificationStore.addTeamToUid(body.team, userId);
+            LOG.info("Registered team {} for uid {}.", body.team, userId);
             return new ResponseEntity<>("", HttpStatus.OK);
         } else {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
