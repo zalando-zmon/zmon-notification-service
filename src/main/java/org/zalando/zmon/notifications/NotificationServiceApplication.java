@@ -300,7 +300,7 @@ public class NotificationServiceApplication {
 
         // prepend domain to click action
         if (null == body.notification.click_action) {
-            body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
+            body.notification.click_action = config.getZmonUrl();
         }
         else if(!body.notification.click_action.startsWith("https://")) {
             body.notification.click_action = config.getZmonUrl() + body.notification.click_action;

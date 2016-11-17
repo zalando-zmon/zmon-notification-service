@@ -30,6 +30,11 @@ public class JsonHelper {
         notify.put("title", notification.notification.title);
         notify.put("icon", notification.notification.icon);
         notify.put("body", notification.notification.body);
+        notify.put("click_action", notification.notification.click_action);
+        if(null != notification.notification.collapse_key && !"".equals(notification.notification.collapse_key)) {
+            notify.put("collapse_key", notification.notification.collapse_key);
+        }
+
         notify.put("sound", "default");
 
         String json = mapper.writeValueAsString(request);

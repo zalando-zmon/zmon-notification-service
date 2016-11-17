@@ -10,6 +10,7 @@ public class PublishNotificationPart {
     public String body = "";
     public String icon = "";
     public String click_action = "";
+    public String collapse_key = "";
 
     public PublishNotificationPart() {
 
