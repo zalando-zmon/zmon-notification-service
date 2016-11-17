@@ -85,7 +85,7 @@ public class RedisNotificationStore implements NotificationStore {
 
     @Override
     public Collection<String> devicesForAlerts(int alertId, String team, int priority) {
-        log.info("looking up devices for: alertId={} team={} priority={}");
+        log.info("looking up devices for: alertId={} team={} priority={}", alertId, team, priority);
         HashSet<String> deviceIds = new HashSet<>();
         try (Jedis jedis = jedisPool.getResource()) {
             Set<String> teamMembers = jedis.smembers(uidsForTeamKey(team));
