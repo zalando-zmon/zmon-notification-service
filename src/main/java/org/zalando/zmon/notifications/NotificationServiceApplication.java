@@ -32,6 +32,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @EnableScheduling
@@ -279,30 +283,50 @@ public class NotificationServiceApplication {
         return new ResponseEntity<>((Collection<Integer>) null, HttpStatus.UNAUTHORIZED);
     }
 
+    private final ThreadPoolExecutor pushExecutor = new ThreadPoolExecutor(5, 10, 10, TimeUnit.MINUTES, new ArrayBlockingQueue<>(5000));
+
+    private class PushTaskExecutable implements Runnable {
+
+        private PublishRequestBody body;
+
+        PushTaskExecutable(PublishRequestBody body) {
+            this.body = body;
+        }
+
+        @Override
+        public void run() {
+            // prepend domain to click action
+            if (null == body.notification.click_action) {
+                body.notification.click_action = config.getZmonUrl();
+            }
+            else if(!body.notification.click_action.startsWith("https://")) {
+                body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
+            }
+
+            Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, body.team, body.priority);
+            for (String deviceId : deviceIds) {
+                try {
+                    pushNotificationService.push(body, deviceId);
+                }
+                catch(IOException ex) {
+
+                }
+            }
+
+            if (deviceIds.size() > 0) {
+                LOG.info("Sent alert {} to {} devices.", body.alertId, deviceIds.size());
+            }
+        }
+    }
 
     // publishing new alerts
     @RequestMapping(value = "/api/v1/publish", method = RequestMethod.POST)
-    public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) throws IOException {
+    public ResponseEntity<String> publishNotification(@RequestBody PublishRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         if (!tokenInfoService.lookupUid(oauthHeader).isPresent()) {
             return new ResponseEntity<>("", HttpStatus.UNAUTHORIZED);
         }
 
-        // prepend domain to click action
-        if (null == body.notification.click_action) {
-            body.notification.click_action = config.getZmonUrl();
-        }
-        else if(!body.notification.click_action.startsWith("https://")) {
-            body.notification.click_action = config.getZmonUrl() + body.notification.click_action;
-        }
-
-        Collection<String> deviceIds = notificationStore.devicesForAlerts(body.alertId, body.team, body.priority);
-        for (String deviceId : deviceIds) {
-            pushNotificationService.push(body, deviceId);
-        }
-
-        if (deviceIds.size() > 0) {
-            LOG.info("Sent alert {} to {} devices.", body.alertId, deviceIds.size());
-        }
+        pushExecutor.execute(new PushTaskExecutable(body));
 
         return new ResponseEntity<>("", HttpStatus.OK);
     }
