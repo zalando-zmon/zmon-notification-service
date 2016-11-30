@@ -69,6 +69,7 @@ public class NotificationServiceApplication {
     @Bean
     NotificationStore getNotificationStore() throws URISyntaxException {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setTestOnBorrow(true);
         JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
         return new RedisNotificationStore(jedisPool, mapper);
     }
@@ -76,6 +77,7 @@ public class NotificationServiceApplication {
     @Bean
     TwilioNotificationStore getTwilioNotificationStore(NotificationServiceConfig config) throws URISyntaxException {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setTestOnBorrow(true);
         JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
         return new TwilioNotificationStore(jedisPool, escalationConfigSource, mapper);
     }

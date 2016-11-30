@@ -194,7 +194,16 @@ public class TwilioCallbackAPI {
         return pendingNotifications;
     }
 
-    @Scheduled(fixedRate = 5000, initialDelay = 60000)
+    @Scheduled(fixedRate = 10000, initialDelay = 60000)
+    public void scheduledPendingCallExecutor() {
+        try {
+            handlePendingCalls();
+        }
+        catch(Throwable t) {
+            log.error("Unexpected error in Twilio scheduled action.", t);
+        }
+    }
+
     public void handlePendingCalls() throws URISyntaxException {
         List<PendingNotification> results = store.getPendingNotifications();
         if (null == results) {
