@@ -251,6 +251,13 @@ public class TwilioCallbackAPI {
                         if (store.lockAlert(alertId)) {
                             List<String> entities = filtered.stream().map(x->x.getEntityId()).collect(Collectors.toList());
                             log.info("Calling ... alertId={} level={} phone={} entities={}", alertId, level, phone, entities);
+                            if (entities.size()==1) {
+                                eventLog.log(ZMonEventType.CALL_TRIGGERED, alertId, entities.get(0), phone, level);
+                            }
+                            else {
+                                eventLog.log(ZMonEventType.CALL_AGGR_TRIGGERED, alertId, entities, phone, level);
+                            }
+
                             TwilioCallData data = new TwilioCallData(alertId, entities, filtered.get(0).getMessage(), filtered.get(0).getVoice(), incidentId, phone);
                             String uuid = store.storeCallData(data);
 
