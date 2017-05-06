@@ -31,8 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.zalando.zmon.notifications.ZMonEventType.PAGE_ACKNOWLEDGED;
 import static org.zalando.zmon.notifications.pagerduty.client.ClientTestUtils.mockAlert;
 
-//@RunWith(SpringRunner.class)
-//@WebMvcTest(PagerDutyWebHookController.class)
 @RunWith(MockitoJUnitRunner.class)
 public class PagerDutyWebHookControllerTest {
     @Mock
