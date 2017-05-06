@@ -11,7 +11,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.servlet.View;
 import org.zalando.zmon.notifications.HttpEventLogger;
 import org.zalando.zmon.notifications.config.NotificationServiceConfig;
 import org.zalando.zmon.notifications.oauth.TokenInfoService;
@@ -27,14 +26,13 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.zalando.zmon.notifications.ZMonEventType.PAGE_ACKNOWLEDGED;
 import static org.zalando.zmon.notifications.pagerduty.client.ClientTestUtils.mockAlert;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PagerDutyWebHookControllerTest {
-    @Mock
-    private View mockView;
     @Mock
     private TokenInfoService tokenInfoService;
     @Mock
@@ -52,7 +50,7 @@ public class PagerDutyWebHookControllerTest {
     public void setUp() {
         final Object webHookController = new PagerDutyWebHookController(pagerDutyClient, tokenInfoService,
                 config, httpEventLogger, alertStore);
-        mockMvc = MockMvcBuilders.standaloneSetup(webHookController).setSingleView(mockView).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(webHookController).alwaysDo(print()).build();
     }
 
     @Test
