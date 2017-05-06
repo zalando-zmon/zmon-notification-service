@@ -1,6 +1,7 @@
 package org.zalando.zmon.notifications;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +34,6 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class NotificationServiceApplication {
 
     private static final Logger LOG = LoggerFactory.getLogger(NotificationServiceApplication.class);
+    public static final String DRY_RUN_PRE_SHARED_KEY = "DRY-RUN";
 
     @Autowired
     ObjectMapper mapper;
@@ -55,9 +56,17 @@ public class NotificationServiceApplication {
     EscalationConfigSource escalationConfigSource;
 
     @Bean
-    TokenInfoService getTokenInfoService(NotificationServiceConfig config, PreSharedKeyStore preSharedKeyStore) {
-        ChainedTokenInfo info = new ChainedTokenInfo(new PreSharedTokenInfoService(preSharedKeyStore),
-                                                     new OAuthTokenInfoService(config.getOauthInfoServiceUrl()));
+    TokenInfoService getTokenInfoService(final NotificationServiceConfig config, final PreSharedKeyStore preSharedKeyStore) {
+        final TokenInfoService info;
+        if(config.isDryRun()) {
+            info = new PreSharedTokenInfoService(new PreSharedKeyStore(
+                    ImmutableMap.of(DRY_RUN_PRE_SHARED_KEY, Long.MAX_VALUE)));
+        } else {
+            info = new ChainedTokenInfo(
+                    new PreSharedTokenInfoService(preSharedKeyStore),
+                    new OAuthTokenInfoService(config.getOauthInfoServiceUrl())
+            );
+        }
         return info;
     }
 

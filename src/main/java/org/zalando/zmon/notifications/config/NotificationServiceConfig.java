@@ -13,6 +13,8 @@ import java.util.Map;
 @Configuration
 @ConfigurationProperties(prefix = "notifications")
 public class NotificationServiceConfig {
+    public static final String PAGERDUTY_API_DEFAULT_URL = "https://api.pagerduty.com";
+
     private String oauthInfoServiceUrl;
 
     private String googleUrl;
@@ -49,6 +51,12 @@ public class NotificationServiceConfig {
     private String oauth2AccessTokenUrl = null;
     private List<String> oauth2Scopes = Arrays.asList("uid");
     private String oauth2StaticToken = "";
+
+    private String pagerDutyApiUrl = PAGERDUTY_API_DEFAULT_URL;
+    private String pagerDutyApiKey = "";
+    private int pagerDutyConnectTimeout = 5000;
+    private int pagerDutyRequestConnectionTimeout = 5000;
+    private int pagerDutySocketTimeout = 5000;
 
     private boolean dryRun = true;
 
@@ -269,5 +277,45 @@ public class NotificationServiceConfig {
 
     public void setOauth2StaticToken(String oauth2StaticToken) {
         this.oauth2StaticToken = oauth2StaticToken;
+    }
+
+    public String getPagerDutyApiUrl() {
+        return pagerDutyApiUrl;
+    }
+
+    public void setPagerDutyApiUrl(String pagerDutyApiUrl) {
+        this.pagerDutyApiUrl = pagerDutyApiUrl;
+    }
+
+    public String getPagerDutyApiKey() {
+        return pagerDutyApiKey;
+    }
+
+    public void setPagerDutyApiKey(String pagerDutyApiKey) {
+        this.pagerDutyApiKey = pagerDutyApiKey;
+    }
+
+    public int getPagerDutyConnectTimeout() {
+        return pagerDutyConnectTimeout;
+    }
+
+    public void setPagerDutyConnectTimeout(int pagerDutyConnectTimeout) {
+        this.pagerDutyConnectTimeout = pagerDutyConnectTimeout;
+    }
+
+    public int getPagerDutyRequestConnectionTimeout() {
+        return pagerDutyRequestConnectionTimeout;
+    }
+
+    public void setPagerDutyRequestConnectionTimeout(int pagerDutyRequestConnectionTimeout) {
+        this.pagerDutyRequestConnectionTimeout = pagerDutyRequestConnectionTimeout;
+    }
+
+    public int getPagerDutySocketTimeout() {
+        return pagerDutySocketTimeout;
+    }
+
+    public void setPagerDutySocketTimeout(int pagerDutySocketTimeout) {
+        this.pagerDutySocketTimeout = pagerDutySocketTimeout;
     }
 }

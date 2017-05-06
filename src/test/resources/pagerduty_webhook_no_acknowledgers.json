@@ -1,0 +1,74 @@
+{
+  "messages": [
+    {
+      "type": "incident.acknowledge",
+      "data": {
+        "incident": {
+          "id": "INC1234",
+          "incident_number": 28,
+          "created_on": "2017-05-04T14:18:31Z",
+          "status": "acknowledged",
+          "pending_actions": [
+            {
+              "type": "unacknowledge",
+              "at": "2017-05-04T14:49:48Z"
+            },
+            {
+              "type": "resolve",
+              "at": "2017-05-04T18:18:31Z"
+            }
+          ],
+          "html_url": "https://example.pagerduty.com/incidents/INC1234",
+          "incident_key": "db4254b34538426bad066bb12527bc1e",
+          "service": {
+            "id": "SVC1234",
+            "name": "ZMON Notifications",
+            "html_url": "https://example.pagerduty.com/services/SVC1234",
+            "deleted_at": null,
+            "description": "Test ZMON notifications"
+          },
+          "escalation_policy": {
+            "id": "ESC1234",
+            "name": "ZMON test",
+            "deleted_at": null
+          },
+          "assigned_to_user": {
+            "id": "USR1234",
+            "name": "John Doe",
+            "email": "john.doe@domain.com",
+            "html_url": "https://example.pagerduty.com/users/USR1234"
+          },
+          "trigger_summary_data": {
+            "subject": "webhook"
+          },
+          "trigger_details_html_url": "https://example.pagerduty.com/incidents/INC1234/log_entries/XXXYYYZZZ",
+          "trigger_type": "web_trigger",
+          "last_status_change_on": "2017-05-04T14:19:48Z",
+          "last_status_change_by": {
+            "id": "USR1234",
+            "name": "John Doe",
+            "email": "john.doe@domain.com",
+            "html_url": "https://example.pagerduty.com/users/USR1234"
+          },
+          "number_of_escalations": null,
+          "assigned_to": [
+            {
+              "at": "2017-05-04T14:19:48Z",
+              "object": {
+                "id": "USR1234",
+                "name": "John Doe",
+                "email": "john.doe@domain.com",
+                "html_url": "https://zalando.pagerduty.com/users/USR1234",
+                "type": "user"
+              }
+            }
+          ],
+          "acknowledgers": [],
+          "urgency": "low"
+        }
+      },
+      "id": "ed18249c-7e6f-4f4e-9ea1-1a11548fef75",
+      "created_on": "2017-05-04T14:19:48Z"
+    }
+  ]
+}
