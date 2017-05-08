@@ -52,7 +52,7 @@ public class Config {
     public AlertStore redisAlertStore(final NotificationServiceConfig config) throws URISyntaxException {
         final JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setTestOnBorrow(true);
-        final JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getRedisUri()));
+        final JedisPool jedisPool = new JedisPool(poolConfig, new URI(config.getAlertsRedisUri()));
         return new RedisAlertStore(jedisPool);
     }
 

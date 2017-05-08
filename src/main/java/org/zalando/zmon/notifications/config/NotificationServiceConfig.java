@@ -21,6 +21,7 @@ public class NotificationServiceConfig {
     private String googleApiKey;
 
     private String redisUri;
+    private String alertsRedisUri;
 
     private String twilioApiKey = "";
     private String twilioUser = "";
@@ -317,5 +318,13 @@ public class NotificationServiceConfig {
 
     public void setPagerDutySocketTimeout(int pagerDutySocketTimeout) {
         this.pagerDutySocketTimeout = pagerDutySocketTimeout;
+    }
+
+    public String getAlertsRedisUri() {
+        return alertsRedisUri;
+    }
+
+    public void setAlertsRedisUri(String alertsRedisUri) {
+        this.alertsRedisUri = alertsRedisUri;
     }
 }

@@ -105,9 +105,6 @@ public class NotificationServiceApplication {
     @Autowired
     NotificationStore notificationStore;
 
-    @Autowired
-    PreSharedKeyStore keyStore;
-
     @RequestMapping(value = "/api/v1/device", method = RequestMethod.POST)
     public ResponseEntity<String> registerDevice(@RequestBody DeviceRequestBody body, @RequestHeader(value = "Authorization", required = false) String oauthHeader) {
         Optional<String> uid = tokenInfoService.lookupUid(oauthHeader);
