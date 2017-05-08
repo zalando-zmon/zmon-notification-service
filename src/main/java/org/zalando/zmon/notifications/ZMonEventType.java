@@ -39,12 +39,15 @@ public enum ZMonEventType implements EventType {
     CALL_ANSWERED(0x34202, "alertId", "entityIds", "phone"),
     CALL_ALERT_ACK_RECEIVED(0x3420A, "alertId", "phone", "incidentId"),
     CALL_ENTITY_ACK_RECEIVED(0x3420B, "alertId", "phone", "entityIds", "incidentId"),
-    CALL_ALERT_RESOLVED(0x34210, "alertId", "incidentId");
+    CALL_ALERT_RESOLVED(0x34210, "alertId", "incidentId"),
+
+    // Abstract paging provider events
+    PAGE_ACKNOWLEDGED(0x34301, "alertId", "userName");
 
     private final int id;
     private final List<String> fieldNames;
 
-    private ZMonEventType(final int id, final String... fieldNames) {
+    ZMonEventType(final int id, final String... fieldNames) {
         this.id = id;
         this.fieldNames = Lists.newArrayList(fieldNames);
     }

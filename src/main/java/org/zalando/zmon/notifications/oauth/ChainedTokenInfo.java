@@ -14,9 +14,9 @@ public class ChainedTokenInfo implements TokenInfoService {
 
     TokenInfoService[] services;
 
-    public ChainedTokenInfo(TokenInfoService... service) {
-            services = service;
-            for(TokenInfoService s : services) {
+    public ChainedTokenInfo(TokenInfoService... services) {
+            this.services = services;
+            for(TokenInfoService s : this.services) {
                 log.info("TokenInfo entry: {}", s.getClass());
             }
     }
