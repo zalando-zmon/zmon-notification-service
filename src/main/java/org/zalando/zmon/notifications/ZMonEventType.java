@@ -44,7 +44,7 @@ public enum ZMonEventType implements EventType {
     // Abstract paging provider events
     PAGE_TRIGGERED(0x34300, "alertId", "incidentId", "assignedTo"),
     PAGE_ACKNOWLEDGED(0x34301, "alertId", "incidentId", "acknowledgedBy"),
-    PAGE_UNACKNOWLEDGED(0x34302, "alertId", "incidentId"),
+    PAGE_UNACKNOWLEDGED(0x34302, "alertId", "incidentId", "unacknowledgedBy"),
     PAGE_RESOLVED(0x34303, "alertId", "incidentId", "resolvedBy");
 
     private final int id;
