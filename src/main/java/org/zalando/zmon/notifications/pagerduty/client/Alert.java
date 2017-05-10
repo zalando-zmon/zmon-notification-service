@@ -15,9 +15,4 @@ public class Alert {
     public void setAlertKey(String alertKey) {
         this.alertKey = alertKey;
     }
-
-    @Override
-    public String toString() {
-        return getAlertKey();
-    }
 }

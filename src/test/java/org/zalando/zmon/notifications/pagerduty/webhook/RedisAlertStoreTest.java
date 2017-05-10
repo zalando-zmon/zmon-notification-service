@@ -1,5 +1,6 @@
 package org.zalando.zmon.notifications.pagerduty.webhook;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -24,19 +25,38 @@ public class RedisAlertStoreTest {
     @InjectMocks
     private RedisAlertStore redisAlertStore;
 
+    @Before
+    public void setUp() throws Exception {
+        when(jedisPool.getResource()).thenReturn(jedis);
+    }
+
     @Test
     public void testAck() throws Exception {
-        when(jedisPool.getResource()).thenReturn(jedis);
+
         when(jedis.sadd(anyString(), anyString())).thenReturn(Long.MAX_VALUE);
-        redisAlertStore.ackAlert(12345, "foo");
+        redisAlertStore.ackAlert(12345);
+        verify(jedis).sadd(ZMON_ALERT_ACKS, "12345");
+    }
+
+    @Test(expected = AlertStoreException.class)
+    public void testAckRedisFailure() throws Exception {
+        when(jedis.sadd(anyString(), anyString())).thenThrow(new RuntimeException("shit has hit the fan"));
+        redisAlertStore.ackAlert(12345);
         verify(jedis).sadd(ZMON_ALERT_ACKS, "12345");
     }
 
     @Test
-    public void testRedisFailure() throws Exception {
-        when(jedisPool.getResource()).thenReturn(jedis);
-        when(jedis.sadd(anyString(), anyString())).thenThrow(new RuntimeException("shit has hit the fan"));
-        redisAlertStore.ackAlert(12345, "foo");
-        verify(jedis).sadd(ZMON_ALERT_ACKS, "12345");
+    public void testUnack() throws Exception {
+        when(jedis.srem(anyString(), anyString())).thenReturn(Long.MAX_VALUE);
+        redisAlertStore.unackAlert(12345);
+        verify(jedis).srem(ZMON_ALERT_ACKS, "12345");
     }
+
+    @Test(expected = AlertStoreException.class)
+    public void testUnackRedisFailure() throws Exception {
+        when(jedis.srem(anyString(), anyString())).thenThrow(new RuntimeException("shit has hit the fan"));
+        redisAlertStore.unackAlert(12345);
+        verify(jedis).srem(ZMON_ALERT_ACKS, "12345");
+    }
+
 }
