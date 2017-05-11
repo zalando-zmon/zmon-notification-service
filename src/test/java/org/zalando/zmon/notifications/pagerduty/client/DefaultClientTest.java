@@ -14,7 +14,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.zalando.zmon.notifications.pagerduty.client.ClientTestUtils.mockAlert;
+import static org.zalando.zmon.notifications.pagerduty.WebHookTestUtils.mockAlert;
 
 public class DefaultClientTest {
     @Test

@@ -19,11 +19,20 @@ public class RedisAlertStore implements AlertStore {
     }
 
     @Override
-    public void ackAlert(int alertId, String userName) {
+    public void ackAlert(int alertId) {
         try(final Jedis jedis = pool.getResource()) {
             jedis.sadd(ZMON_ALERT_ACKS, Integer.toString(alertId));
         } catch(Exception ex) {
-            log.error("failed to ACK alert {} from user {}", alertId, userName, ex);
+            throw new AlertStoreException(String.format("Failed to add alert #%d to %s", alertId, ZMON_ALERT_ACKS), ex);
+        }
+    }
+
+    @Override
+    public void unackAlert(final int alertId) {
+        try(final Jedis jedis = pool.getResource()) {
+            jedis.srem(ZMON_ALERT_ACKS, Integer.toString(alertId));
+        } catch(Exception ex) {
+            throw new AlertStoreException(String.format("Failed to remove alert #%d to %s", alertId, ZMON_ALERT_ACKS), ex);
         }
     }
 }

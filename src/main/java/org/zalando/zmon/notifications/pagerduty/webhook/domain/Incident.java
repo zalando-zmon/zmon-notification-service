@@ -12,6 +12,8 @@ public class Incident {
     private Date createdOn;
     private IncidentStatus status;
     private List<Acknowledger> acknowledgers;
+    private User assignedToUser;
+    private User resolvedByUser;
 
     public String getId() {
         return id;
@@ -51,5 +53,21 @@ public class Incident {
 
     public void setAcknowledgers(List<Acknowledger> acknowledgers) {
         this.acknowledgers = acknowledgers;
+    }
+
+    public User getAssignedToUser() {
+        return assignedToUser;
+    }
+
+    public void setAssignedToUser(final User assignedToUser) {
+        this.assignedToUser = assignedToUser;
+    }
+
+    public User getResolvedByUser() {
+        return resolvedByUser;
+    }
+
+    public void setResolvedByUser(final User resolvedByUser) {
+        this.resolvedByUser = resolvedByUser;
     }
 }
