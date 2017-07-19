@@ -33,41 +33,42 @@ public class ActionHandler {
         int alertId = action.getAlertId();
         String username = action.getAlert().getUsername();
         ActionType actionType = action.getAction();
+        String incidentId = action.getAlert().getTinyId();
 
         if (actionType == ActionType.CREATE) {
-            handleCreate(alertId, action.getAlert().getRecipients());
+            handleCreate(alertId, incidentId, action.getAlert().getRecipients());
         } else if (actionType == ActionType.CLOSE) {
-            handleClose(alertId, username);
+            handleClose(alertId, incidentId, username);
         } else if (actionType == ActionType.ACKNOWLEDGE) {
-            handleAck(alertId, username);
+            handleAck(alertId, incidentId, username);
         } else if (actionType == ActionType.UNACKNOWLEDGE) {
-            handleUnAck(alertId, username);
+            handleUnAck(alertId, incidentId, username);
         } else {
             log.info("Received unsupported action {}", actionType.toString());
         }
 
     }
 
-    private void handleAck(final int alertId, final String userName) {
+    private void handleAck(final int alertId, final String incidentId, final String userName) {
         updateStore(true, alertId);
-        eventLog.log(PAGE_ACKNOWLEDGED, alertId, userName);
+        eventLog.log(PAGE_ACKNOWLEDGED, alertId, incidentId, userName);
         log.info("User {} acknowledged alert #{}", userName, alertId);
     }
 
-    private void handleUnAck(final int alertId, final String userName) {
+    private void handleUnAck(final int alertId, final String incidentId, final String userName) {
         updateStore(false, alertId);
-        eventLog.log(PAGE_UNACKNOWLEDGED, alertId, userName);
+        eventLog.log(PAGE_UNACKNOWLEDGED, alertId, incidentId, userName);
         log.info("User {} unacknowledged alert #{}", userName, alertId);
     }
 
-    private void handleCreate(final int alertId, final List<String> recipients) {
-        eventLog.log(PAGE_TRIGGERED, alertId, recipients.toString());
+    private void handleCreate(final int alertId, final String incidentId, final List<String> recipients) {
+        eventLog.log(PAGE_TRIGGERED, alertId, incidentId, recipients.toString());
         log.info("Alert #{} assigned to {}", alertId, recipients.toString());
     }
 
-    private void handleClose(final int alertId, final String userName) {
+    private void handleClose(final int alertId, final String incidentId, final String userName) {
         updateStore(false, alertId);
-        eventLog.log(PAGE_RESOLVED, alertId, userName);
+        eventLog.log(PAGE_RESOLVED, alertId, incidentId, userName);
         log.info("Alert #{} resolved by {}", alertId, userName);
     }
 

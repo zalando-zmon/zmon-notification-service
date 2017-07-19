@@ -11,6 +11,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Alert {
     private String alias;
+    private String tinyId;
     private String username = "UNKNOWN";
     private List<String> recipients = new ArrayList<String>();
 
@@ -37,4 +38,8 @@ public class Alert {
     public void setRecipients(List<String> recipients) {
         this.recipients = recipients;
     }
+
+    public String getTinyId() { return tinyId; }
+
+    public void setTinyId(String tinyId) { this.tinyId = tinyId; }
 }
