@@ -48,4 +48,13 @@ public class AlertAction {
 
         return Integer.parseInt(alias.split("-")[1]);
     }
+
+    @Override
+    public String toString() {
+        return "AlertAction{" +
+                "action=" + action +
+                ", integrationName='" + integrationName + '\'' +
+                ", alert=" + alert.toString() +
+                '}';
+    }
 }

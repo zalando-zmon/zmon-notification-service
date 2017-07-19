@@ -42,4 +42,14 @@ public class Alert {
     public String getTinyId() { return tinyId; }
 
     public void setTinyId(String tinyId) { this.tinyId = tinyId; }
+
+    @Override
+    public String toString() {
+        return "Alert{" +
+                "alias='" + alias + '\'' +
+                ", tinyId='" + tinyId + '\'' +
+                ", username='" + username + '\'' +
+                ", recipients=" + recipients +
+                '}';
+    }
 }

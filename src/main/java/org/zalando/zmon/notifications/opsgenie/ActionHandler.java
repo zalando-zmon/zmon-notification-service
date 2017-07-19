@@ -30,6 +30,8 @@ public class ActionHandler {
 
     public void handleAction(final AlertAction action) {
 
+        log.debug("Handling new Opsgenie action: {}", action.toString());
+
         int alertId = action.getAlertId();
         String username = action.getAlert().getUsername();
         ActionType actionType = action.getAction();
@@ -52,24 +54,24 @@ public class ActionHandler {
     private void handleAck(final int alertId, final String incidentId, final String userName) {
         updateStore(true, alertId);
         eventLog.log(PAGE_ACKNOWLEDGED, alertId, incidentId, userName);
-        log.info("User {} acknowledged alert #{}", userName, alertId);
+        log.info("User {} acknowledged alert #{} ({})", userName, alertId, incidentId);
     }
 
     private void handleUnAck(final int alertId, final String incidentId, final String userName) {
         updateStore(false, alertId);
         eventLog.log(PAGE_UNACKNOWLEDGED, alertId, incidentId, userName);
-        log.info("User {} unacknowledged alert #{}", userName, alertId);
+        log.info("User {} unacknowledged alert #{} ({})", userName, alertId, incidentId);
     }
 
     private void handleCreate(final int alertId, final String incidentId, final List<String> recipients) {
         eventLog.log(PAGE_TRIGGERED, alertId, incidentId, recipients.toString());
-        log.info("Alert #{} assigned to {}", alertId, recipients.toString());
+        log.info("Alert #{} ({}) assigned to {}", alertId, incidentId,recipients.toString());
     }
 
     private void handleClose(final int alertId, final String incidentId, final String userName) {
         updateStore(false, alertId);
         eventLog.log(PAGE_RESOLVED, alertId, incidentId, userName);
-        log.info("Alert #{} resolved by {}", alertId, userName);
+        log.info("Alert #{} ({}) resolved by {}", alertId, incidentId, userName);
     }
 
     private void updateStore(boolean ack, int alertId) {
