@@ -97,6 +97,11 @@
 			<artifactId>failsafe</artifactId>
 			<version>1.0.4</version>
 		</dependency>
+		<dependency>
+			<groupId>io.opentracing.contrib</groupId>
+			<artifactId>opentracing-spring-cloud-starter</artifactId>
+			<version>0.1.6</version>
+		</dependency>
 	</dependencies>
 
 	<build>
